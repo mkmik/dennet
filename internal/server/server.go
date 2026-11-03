@@ -77,12 +77,16 @@ type localConnKey struct{}
 
 // Run serves the API until ctx is cancelled.
 func Run(ctx context.Context, o Options) error {
-	if err := os.MkdirAll(o.StateDir, 0o700); err != nil {
-		return err
-	}
-	token, err := loadOrCreateToken(filepath.Join(o.StateDir, "token"))
-	if err != nil {
-		return err
+	// Only TCP needs the token; the Unix socket is guarded by its file mode.
+	var token string
+	if o.TCPAddr != "" {
+		if err := os.MkdirAll(o.StateDir, 0o700); err != nil {
+			return err
+		}
+		var err error
+		if token, err = loadOrCreateToken(filepath.Join(o.StateDir, "token")); err != nil {
+			return err
+		}
 	}
 
 	srv, err := newAPIServer(token, o.Socket)
@@ -232,7 +236,8 @@ func authn(token string) authenticator.Request {
 			return admin, true, nil
 		}
 		got, ok := strings.CutPrefix(req.Header.Get("Authorization"), "Bearer ")
-		if ok && subtle.ConstantTimeCompare([]byte(got), []byte(token)) == 1 {
+		// An empty token (no --tcp) must never match "Bearer ".
+		if ok && token != "" && subtle.ConstantTimeCompare([]byte(got), []byte(token)) == 1 {
 			return admin, true, nil
 		}
 		return nil, false, nil
