@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	coordinationv1 "k8s.io/api/coordination/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -54,6 +55,8 @@ func init() {
 	// No separate internal types: the versioned ones double as internal.
 	Scheme.AddKnownTypes(schema.GroupVersion{Group: coordinationv1.GroupName, Version: runtime.APIVersionInternal},
 		&coordinationv1.Lease{}, &coordinationv1.LeaseList{})
+	Scheme.AddKnownTypes(corev1.SchemeGroupVersion, &corev1.Namespace{}, &corev1.NamespaceList{})
+	Scheme.AddKnownTypes(schema.GroupVersion{Version: runtime.APIVersionInternal}, &corev1.Namespace{}, &corev1.NamespaceList{})
 
 	unversioned := schema.GroupVersion{Version: "v1"}
 	metav1.AddToGroupVersion(Scheme, unversioned)
@@ -135,7 +138,21 @@ func serve(err error) error {
 }
 
 func newAPIServer(token, socket string) (*genericapiserver.GenericAPIServer, error) {
+	// ponytail: everything, Leases included, is in memory and lost on restart.
+	backend := memstore.New()
+	optsFor := func(gv schema.GroupVersion) generic.RESTOptionsGetter {
+		return restOptions{gv: gv, backend: backend}
+	}
+	ns, err := registry.NewNamespace(Scheme, optsFor(corev1.SchemeGroupVersion))
+	if err != nil {
+		return nil, err
+	}
+	if err := ns.Ensure(context.Background(), metav1.NamespaceDefault); err != nil {
+		return nil, err
+	}
+
 	cfg := genericapiserver.NewConfig(Codecs)
+	cfg.AdmissionControl = ns.AutoCreate()
 	cfg.EffectiveVersion = basecompatibility.NewEffectiveVersionFromString(baseversion.DefaultKubeBinaryVersion, "", "")
 	cfg.ExternalAddress = "localhost:0" // only shown in discovery
 	cfg.LoopbackClientConfig = &restclient.Config{
@@ -157,12 +174,6 @@ func newAPIServer(token, socket string) (*genericapiserver.GenericAPIServer, err
 		return nil, err
 	}
 
-	// ponytail: everything, Leases included, is in memory and lost on restart.
-	backend := memstore.New()
-	optsFor := func(gv schema.GroupVersion) generic.RESTOptionsGetter {
-		return restOptions{gv: gv, backend: backend}
-	}
-
 	den, denStatus, err := registry.NewDen(Scheme, optsFor(denv1.SchemeGroupVersion))
 	if err != nil {
 		return nil, err
@@ -182,6 +193,11 @@ func newAPIServer(token, socket string) (*genericapiserver.GenericAPIServer, err
 		"leases": lease,
 	}
 	if err := srv.InstallAPIGroups(&denGroup, &leaseGroup); err != nil {
+		return nil, err
+	}
+	coreGroup := genericapiserver.NewDefaultAPIGroupInfo(corev1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
+	coreGroup.VersionedResourcesStorageMap["v1"] = map[string]rest.Storage{"namespaces": ns}
+	if err := srv.InstallLegacyAPIGroup(genericapiserver.DefaultLegacyAPIPrefix, &coreGroup); err != nil {
 		return nil, err
 	}
 	return srv, nil

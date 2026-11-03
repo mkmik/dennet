@@ -102,6 +102,16 @@ func TestDenProtocol(t *testing.T) {
 	if code, m := do("POST", "http://dennet/apis/coordination.k8s.io/v1/namespaces/p/leases", "application/json", lease); code != 201 {
 		t.Fatalf("lease create: %d %v", code, m)
 	}
+
+	// Creating a Den made its namespace; "default" exists from the start.
+	for _, n := range []string{"p", "default"} {
+		if code, m := do("GET", "http://dennet/api/v1/namespaces/"+n, "", ""); code != 200 || m["status"].(map[string]any)["phase"] != "Active" {
+			t.Fatalf("namespace %s: %d %v", n, code, m)
+		}
+	}
+	if code, m := do("POST", "http://dennet/api/v1/namespaces", "application/json", `{"metadata":{"name":"q"}}`); code != 201 {
+		t.Fatalf("namespace create: %d %v", code, m)
+	}
 }
 
 func doReady(c *http.Client) (int, error) {
