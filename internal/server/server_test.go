@@ -57,6 +57,9 @@ func TestDenProtocol(t *testing.T) {
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
+	if _, err := os.Stat(filepath.Join(dir, "token")); !os.IsNotExist(err) {
+		t.Fatalf("token file created without --tcp: %v", err)
+	}
 
 	code, den := do("POST", base, "application/json",
 		`{"apiVersion":"den.mkm.pub/v1alpha1","kind":"Den","metadata":{"name":"build"},"spec":{"command":["/bin/sh"]},"status":{"phase":"Running"}}`)
