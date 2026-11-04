@@ -17,6 +17,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/genericiooptions"
 	"k8s.io/client-go/rest"
+	"k8s.io/component-base/cli"
 	kubectl "k8s.io/kubectl/pkg/cmd"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 	"k8s.io/kubectl/pkg/util/term"
@@ -145,6 +146,6 @@ func main() {
 	}
 	root.AddCommand(logs)
 
-	root.SilenceErrors = true // CheckErr prints them, as kubectl does
-	cmdutil.CheckErr(root.Execute())
+	// As kubectl's main: adds -v and the other klog flags; CheckErr prints errors.
+	cmdutil.CheckErr(cli.RunNoErrOutput(root))
 }
