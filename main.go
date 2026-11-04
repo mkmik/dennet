@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -21,6 +22,7 @@ import (
 	"k8s.io/kubectl/pkg/util/term"
 
 	"github.com/mkmik/dennet/internal/server"
+	denv1 "github.com/mkmik/dennet/pkg/apis/den/v1alpha1"
 )
 
 func main() {
@@ -102,6 +104,46 @@ func main() {
 	srv := &cobra.Command{Use: "server", Short: "Manage the dennet API server"}
 	srv.AddCommand(run)
 	root.AddCommand(srv)
+
+	var color bool
+	logs := &cobra.Command{
+		Use:   "logs NAME",
+		Short: "Print a den's scrollback and screen as text",
+		Long:  "Print a den's scrollback and screen as text, as den logs does; the alternate screen comes last.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ns, _, err := flags.ToRawKubeConfigLoader().Namespace()
+			if err != nil {
+				return err
+			}
+			cfg, err := flags.ToRESTConfig()
+			if err != nil {
+				return err
+			}
+			cfg.APIPath, cfg.GroupVersion = "/apis", &denv1.SchemeGroupVersion
+			cfg.NegotiatedSerializer = server.Codecs.WithoutConversion()
+			c, err := rest.RESTClientFor(cfg)
+			if err != nil {
+				return err
+			}
+			body, err := c.Get().Namespace(ns).Resource("dens").Name(args[0]).SubResource("log").
+				Param("color", strconv.FormatBool(color)).Stream(cmd.Context())
+			if err != nil {
+				return err
+			}
+			defer body.Close()
+			_, err = io.Copy(os.Stdout, body)
+			return err
+		},
+	}
+	logs.Flags().BoolVar(&color, "color", false, "keep colors")
+	// kubectl's logs only knows pods. Overwrite it in place: kubectl's help
+	// groups hold its pointer, so it keeps its spot there.
+	if c, _, err := root.Find([]string{"logs"}); err == nil && c != root {
+		root.RemoveCommand(c)
+		*c, logs = *logs, c
+	}
+	root.AddCommand(logs)
 
 	root.SilenceErrors = true // CheckErr prints them, as kubectl does
 	cmdutil.CheckErr(root.Execute())

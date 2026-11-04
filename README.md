@@ -10,6 +10,12 @@ It also serves `v1` `Namespace`. The `default` namespace always exists, and
 creating any object in a namespace creates that namespace if needed. Deleting a
 namespace does not delete the objects in it.
 
+`dens/log` is a subresource that returns the same text as `den logs`: the
+scrollback and the screen (`?color=true` keeps colors). dennet gets it from the
+den's control socket. That is the path in `status.socket`, or, if that is
+empty, the path den itself uses for that namespace and name on this host.
+`dennet logs NAME [--color]` reads it.
+
 ## Run
 
 ```sh

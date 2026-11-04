@@ -3,7 +3,9 @@ package server
 import (
 	"bufio"
 	"context"
+	"encoding/binary"
 	"encoding/json"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -80,6 +82,26 @@ func TestDenProtocol(t *testing.T) {
 	}
 	if e := next(t, events); e.Type != "MODIFIED" || e.Object["status"].(map[string]any)["phase"] != "Running" {
 		t.Fatalf("want MODIFIED with phase Running, got %v", e)
+	}
+
+	// dens/log asks the den on status.socket for its history.
+	denSock := filepath.Join(dir, "d")
+	fakeDen(t, denSock, "\x1b[31mhi\x1b[0m\n")
+	if code, m := do("PATCH", base+"/build/status", "application/merge-patch+json", `{"status":{"socket":"`+denSock+`"}}`); code != 200 {
+		t.Fatalf("status patch: %d %v", code, m)
+	}
+	next(t, events)
+	resp, err := c.Get(base + "/build/log?color=true")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != 200 || string(body) != "\x1b[31mhi\x1b[0m\n" {
+		t.Fatalf("log: %d %q", resp.StatusCode, body)
+	}
+	if code, _ := do("GET", base+"/nope/log", "", ""); code != 404 {
+		t.Fatalf("log of a missing den: want 404, got %d", code)
 	}
 
 	stale := `{"metadata":{"uid":"00000000-0000-0000-0000-000000000000"},"status":{"phase":"Exited"}}`
@@ -161,4 +183,29 @@ func next(t *testing.T, ch <-chan event) event {
 		t.Fatal("timed out waiting for a watch event")
 		return event{}
 	}
+}
+
+// fakeDen answers one history request with colors on (den's frame: u32
+// length, u8 type 7, u8 flags), with text.
+func fakeDen(t *testing.T, path, text string) {
+	t.Helper()
+	ln, err := net.Listen("unix", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { ln.Close() })
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		req := make([]byte, 6)
+		if _, err := io.ReadFull(conn, req); err != nil || string(req) != "\x02\x00\x00\x00\x07\x01" {
+			t.Errorf("history request: %q %v", req, err)
+			return
+		}
+		conn.Write(binary.LittleEndian.AppendUint32(nil, uint32(1+len(text))))
+		conn.Write(append([]byte{7}, text...))
+	}()
 }

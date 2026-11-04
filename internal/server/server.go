@@ -191,6 +191,7 @@ func newAPIServer(token, socket string) (*genericapiserver.GenericAPIServer, err
 	denGroup.VersionedResourcesStorageMap[denv1.SchemeGroupVersion.Version] = map[string]rest.Storage{
 		"dens":        den,
 		"dens/status": denStatus,
+		"dens/log":    registry.NewDenLog(den),
 	}
 	leaseGroup := genericapiserver.NewDefaultAPIGroupInfo(coordinationv1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 	leaseGroup.VersionedResourcesStorageMap[coordinationv1.SchemeGroupVersion.Version] = map[string]rest.Storage{
