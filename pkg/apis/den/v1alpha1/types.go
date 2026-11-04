@@ -17,11 +17,18 @@ type Den struct {
 	Status DenStatus `json:"status,omitempty"`
 }
 
+// DenSpec follows Spec in den's src/spec.zig. Report, HostName and
+// RestartPolicy are dennet's own; den ignores them.
 type DenSpec struct {
-	// Command is the program and its arguments. Immutable.
-	Command    []string `json:"command"`
+	// Command is the program and its arguments. Empty means the user's
+	// shell as a login shell. Immutable.
+	Command    []string `json:"command,omitempty"`
 	WorkingDir string   `json:"workingDir,omitempty"`
-	Env        []EnvVar `json:"env,omitempty"`
+	// Env is added to the environment; it wins over inherited values.
+	Env []EnvVar `json:"env,omitempty"`
+	// InheritEnv names variables copied from the environment den was
+	// started with: exact names, or prefixes ending in "*". ["*"] copies all.
+	InheritEnv []string `json:"inheritEnv,omitempty"`
 	// Size of the PTY while no client is attached.
 	Size *Size `json:"size,omitempty"`
 	// Paused stops the program (SIGSTOP) while true.
@@ -76,10 +83,12 @@ const (
 )
 
 type DenStatus struct {
-	Phase          DenPhase     `json:"phase,omitempty"`
-	PID            int32        `json:"pid,omitempty"`
-	Host           string       `json:"host,omitempty"`
-	Socket         string       `json:"socket,omitempty"`
+	Phase  DenPhase `json:"phase,omitempty"`
+	PID    int32    `json:"pid,omitempty"`
+	Host   string   `json:"host,omitempty"`
+	Socket string   `json:"socket,omitempty"`
+	// Log is den's log file, next to the socket.
+	Log            string       `json:"log,omitempty"`
 	Clients        int32        `json:"clients,omitempty"`
 	Screen         string       `json:"screen,omitempty"`
 	Title          string       `json:"title,omitempty"`
