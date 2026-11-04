@@ -19,21 +19,7 @@ import (
 // den does: create, single-object watch, status PATCH with a uid
 // precondition, stale watches and deletion.
 func TestDenProtocol(t *testing.T) {
-	dir, err := os.MkdirTemp("", "dn") // short: Unix socket paths are limited to ~104 bytes
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.RemoveAll(dir) })
-	sock := filepath.Join(dir, "s")
-
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan error, 1)
-	go func() { done <- Run(ctx, Options{StateDir: dir, Socket: sock}) }()
-	t.Cleanup(func() { cancel(); <-done })
-
-	c := &http.Client{Transport: &http.Transport{DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
-		return (&net.Dialer{}).DialContext(ctx, "unix", sock)
-	}}}
+	c, dir := start(t, "")
 	const base = "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/p/dens"
 	do := func(method, url, ctype, body string) (int, map[string]any) {
 		t.Helper()
@@ -49,15 +35,6 @@ func TestDenProtocol(t *testing.T) {
 		var m map[string]any
 		json.NewDecoder(resp.Body).Decode(&m)
 		return resp.StatusCode, m
-	}
-	for i := 0; ; i++ {
-		if code, _ := doReady(c); code == 200 {
-			break
-		}
-		if i == 100 {
-			t.Fatal("dennet did not become ready")
-		}
-		time.Sleep(50 * time.Millisecond)
 	}
 	if _, err := os.Stat(filepath.Join(dir, "token")); !os.IsNotExist(err) {
 		t.Fatalf("token file created without --tcp: %v", err)
@@ -137,6 +114,93 @@ func TestDenProtocol(t *testing.T) {
 	if code, m := do("POST", "http://dennet/api/v1/namespaces", "application/json", `{"metadata":{"name":"q"}}`); code != 201 {
 		t.Fatalf("namespace create: %d %v", code, m)
 	}
+}
+
+// TestManifests checks that files in the manifests dir are applied at start
+// and as they change, and that their objects go when they are dropped.
+func TestManifests(t *testing.T) {
+	mdir := t.TempDir()
+	write := func(name, body string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(mdir, name), []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	const den = "apiVersion: den.mkm.pub/v1alpha1\nkind: Den\nmetadata: {name: d, namespace: m}\nspec: {command: [sh]}\n"
+	const lease = "apiVersion: coordination.k8s.io/v1\nkind: Lease\nmetadata: {name: l}\n"
+	write("a.yaml", den+"---\n"+lease)
+	write(".a.yaml.swp", "not yaml")
+
+	c, _ := start(t, mdir)
+	denURL := "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/m/dens/d"
+	leaseURL := "http://dennet/apis/coordination.k8s.io/v1/namespaces/default/leases/l"
+	nsURL := "http://dennet/api/v1/namespaces/n"
+	// Ready means the first sync is done, so no waiting here.
+	for _, u := range []string{denURL, leaseURL} {
+		if code := get(t, c, u); code != 200 {
+			t.Fatalf("GET %s after start: %d", u, code)
+		}
+	}
+	eventually := func(url string, want int) {
+		t.Helper()
+		for i := 0; get(t, c, url) != want; i++ {
+			if i == 100 {
+				t.Fatalf("GET %s: want %d", url, want)
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+
+	write("a.yaml", lease) // drops the Den
+	eventually(denURL, 404)
+	write("b.json", `{"apiVersion":"v1","kind":"Namespace","metadata":{"name":"n"}}`)
+	eventually(nsURL, 200)
+	os.Remove(filepath.Join(mdir, "a.yaml"))
+	eventually(leaseURL, 404)
+	if code := get(t, c, nsURL); code != 200 {
+		t.Fatalf("namespace from b.json: %d", code)
+	}
+}
+
+func get(t *testing.T, c *http.Client, url string) int {
+	t.Helper()
+	resp, err := c.Get(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	return resp.StatusCode
+}
+
+// start runs dennet with its state in a temporary dir until the test ends,
+// and returns a client for its socket once it is ready.
+func start(t *testing.T, manifests string) (*http.Client, string) {
+	t.Helper()
+	dir, err := os.MkdirTemp("", "dn") // short: Unix socket paths are limited to ~104 bytes
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	sock := filepath.Join(dir, "s")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- Run(ctx, Options{StateDir: dir, Socket: sock, Manifests: manifests}) }()
+	t.Cleanup(func() { cancel(); <-done })
+
+	c := &http.Client{Transport: &http.Transport{DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+		return (&net.Dialer{}).DialContext(ctx, "unix", sock)
+	}}}
+	for i := 0; ; i++ {
+		if code, _ := doReady(c); code == 200 {
+			break
+		}
+		if i == 100 {
+			t.Fatal("dennet did not become ready")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	return c, dir
 }
 
 func doReady(c *http.Client) (int, error) {

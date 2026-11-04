@@ -34,6 +34,10 @@ func main() {
 	if d := os.Getenv("XDG_STATE_HOME"); d != "" {
 		stateDir = filepath.Join(d, "dennet")
 	}
+	configDir := filepath.Join(home, ".config")
+	if d := os.Getenv("XDG_CONFIG_HOME"); d != "" {
+		configDir = d
+	}
 	var o server.Options
 	socket := func() string {
 		if o.Socket != "" {
@@ -102,6 +106,7 @@ func main() {
 		},
 	}
 	run.Flags().StringVar(&o.TCPAddr, "tcp", "", "also serve TLS on this address (e.g. 127.0.0.1:0), for stock kubectl and remote clients")
+	run.Flags().StringVar(&o.Manifests, "manifests", filepath.Join(configDir, "dennet", "manifests"), "apply the YAML and JSON files in this directory as they change (\"\" to turn off)")
 	srv := &cobra.Command{Use: "server", Short: "Manage the dennet API server"}
 	srv.AddCommand(run)
 	root.AddCommand(srv)

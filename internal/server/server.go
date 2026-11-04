@@ -38,6 +38,7 @@ import (
 	basecompatibility "k8s.io/component-base/compatibility"
 	baseversion "k8s.io/component-base/version"
 
+	"github.com/mkmik/dennet/internal/manifests"
 	"github.com/mkmik/dennet/internal/memstore"
 	"github.com/mkmik/dennet/internal/registry"
 	denv1 "github.com/mkmik/dennet/pkg/apis/den/v1alpha1"
@@ -71,6 +72,9 @@ type Options struct {
 	Socket string
 	// TCPAddr, if set, is a TLS listener that requires the user token.
 	TCPAddr string
+	// Manifests, if set, is a directory whose YAML and JSON files are
+	// applied as they change.
+	Manifests string
 }
 
 type localConnKey struct{}
@@ -89,7 +93,7 @@ func Run(ctx context.Context, o Options) error {
 		}
 	}
 
-	srv, err := newAPIServer(token, o.Socket)
+	srv, err := newAPIServer(token, o.Socket, o.Manifests)
 	if err != nil {
 		return err
 	}
@@ -141,7 +145,7 @@ func serve(err error) error {
 	return err
 }
 
-func newAPIServer(token, socket string) (*genericapiserver.GenericAPIServer, error) {
+func newAPIServer(token, socket, manifestsDir string) (*genericapiserver.GenericAPIServer, error) {
 	// ponytail: everything, Leases included, is in memory and lost on restart.
 	backend := memstore.New()
 	optsFor := func(gv schema.GroupVersion) generic.RESTOptionsGetter {
@@ -176,6 +180,12 @@ func newAPIServer(token, socket string) (*genericapiserver.GenericAPIServer, err
 	srv, err := cfg.Complete(nil).New("dennet", genericapiserver.NewEmptyDelegate())
 	if err != nil {
 		return nil, err
+	}
+	if manifestsDir != "" {
+		// Runs once the API is up; /readyz waits for the first sync.
+		srv.AddPostStartHookOrDie("manifests", func(hc genericapiserver.PostStartHookContext) error {
+			return manifests.Start(hc, manifestsDir, hc.LoopbackClientConfig)
+		})
 	}
 
 	den, denStatus, err := registry.NewDen(Scheme, optsFor(denv1.SchemeGroupVersion))
