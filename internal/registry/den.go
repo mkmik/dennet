@@ -88,16 +88,14 @@ func (s denStrategy) ValidateUpdate(ctx context.Context, obj, old runtime.Object
 
 func validateSpec(s *denv1.DenSpec, p *field.Path) field.ErrorList {
 	var errs field.ErrorList
-	if len(s.Command) == 0 {
-		errs = append(errs, field.Required(p.Child("command"), ""))
-	}
 	for i, e := range s.Env {
 		if e.Name == "" {
 			errs = append(errs, field.Required(p.Child("env").Index(i).Child("name"), ""))
 		}
 	}
-	if s.Size != nil && (s.Size.Cols <= 0 || s.Size.Rows <= 0) {
-		errs = append(errs, field.Invalid(p.Child("size"), s.Size, "cols and rows must be positive"))
+	// den stores cols and rows as u16.
+	if s.Size != nil && (s.Size.Cols <= 0 || s.Size.Rows <= 0 || s.Size.Cols > 65535 || s.Size.Rows > 65535) {
+		errs = append(errs, field.Invalid(p.Child("size"), s.Size, "cols and rows must be between 1 and 65535"))
 	}
 	if s.History.MemoryLines < 0 {
 		errs = append(errs, field.Invalid(p.Child("history", "memoryLines"), s.History.MemoryLines, "must not be negative"))

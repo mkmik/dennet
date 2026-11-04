@@ -86,6 +86,11 @@ func (in *DenSpec) DeepCopyInto(out *DenSpec) {
 		*out = make([]EnvVar, len(*in))
 		copy(*out, *in)
 	}
+	if in.InheritEnv != nil {
+		in, out := &in.InheritEnv, &out.InheritEnv
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Size != nil {
 		in, out := &in.Size, &out.Size
 		*out = new(Size)

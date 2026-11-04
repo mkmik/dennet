@@ -434,11 +434,12 @@ func schema_pkg_apis_den_v1alpha1_DenSpec(ref common.ReferenceCallback) common.O
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "DenSpec follows Spec in den's src/spec.zig. Report, HostName and RestartPolicy are dennet's own; den ignores them.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"command": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Command is the program and its arguments. Immutable.",
+							Description: "Command is the program and its arguments. Empty means the user's shell as a login shell. Immutable.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -458,11 +459,26 @@ func schema_pkg_apis_den_v1alpha1_DenSpec(ref common.ReferenceCallback) common.O
 					},
 					"env": {
 						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
+							Description: "Env is added to the environment; it wins over inherited values.",
+							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref(v1alpha1.EnvVar{}.OpenAPIModelName()),
+									},
+								},
+							},
+						},
+					},
+					"inheritEnv": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InheritEnv names variables copied from the environment den was started with: exact names, or prefixes ending in \"*\". [\"*\"] copies all.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
 									},
 								},
 							},
@@ -508,7 +524,6 @@ func schema_pkg_apis_den_v1alpha1_DenSpec(ref common.ReferenceCallback) common.O
 						},
 					},
 				},
-				Required: []string{"command"},
 			},
 		},
 		Dependencies: []string{
@@ -544,6 +559,13 @@ func schema_pkg_apis_den_v1alpha1_DenStatus(ref common.ReferenceCallback) common
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
+						},
+					},
+					"log": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Log is den's log file, next to the socket.",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"clients": {
