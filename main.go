@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -150,6 +151,32 @@ func main() {
 		*c, logs = *logs, c
 	}
 	root.AddCommand(logs)
+
+	// get -o url prints each object's API URL, e.g.
+	// http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/default/dens/example.
+	// kubectl's printers can't: no object field holds the plural resource.
+	if get, _, err := root.Find([]string{"get"}); err == nil && get != root {
+		run := get.Run
+		get.Run = func(cmd *cobra.Command, args []string) {
+			if cmd.Flag("output").Value.String() != "url" {
+				run(cmd, args)
+				return
+			}
+			ns, _, err := flags.ToRawKubeConfigLoader().Namespace()
+			cmdutil.CheckErr(err)
+			all, _ := cmd.Flags().GetBool("all-namespaces")
+			sel, _ := cmd.Flags().GetString("selector")
+			infos, err := cmdutil.NewFactory(flags).NewBuilder().Unstructured().
+				NamespaceParam(ns).DefaultNamespace().AllNamespaces(all).
+				LabelSelectorParam(sel).ResourceTypeOrNameArgs(true, args...).
+				ContinueOnError().Latest().Flatten().Do().Infos()
+			for _, i := range infos {
+				fmt.Fprintln(cmd.OutOrStdout(), i.Client.Get().NamespaceIfScoped(i.Namespace, i.Namespaced()).
+					Resource(i.Mapping.Resource.Resource).Name(i.Name).URL())
+			}
+			cmdutil.CheckErr(err)
+		}
+	}
 
 	// As kubectl's main: adds -v and the other klog flags; CheckErr prints errors.
 	cmdutil.CheckErr(cli.RunNoErrOutput(root))
