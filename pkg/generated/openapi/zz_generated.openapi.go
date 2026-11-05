@@ -325,6 +325,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		runtime.TypeMeta{}.OpenAPIModelName():                          schema_k8sio_apimachinery_pkg_runtime_TypeMeta(ref),
 		runtime.Unknown{}.OpenAPIModelName():                           schema_k8sio_apimachinery_pkg_runtime_Unknown(ref),
 		version.Info{}.OpenAPIModelName():                              schema_k8sio_apimachinery_pkg_version_Info(ref),
+		v1alpha1.Badge{}.OpenAPIModelName():                            schema_pkg_apis_den_v1alpha1_Badge(ref),
 		v1alpha1.Den{}.OpenAPIModelName():                              schema_pkg_apis_den_v1alpha1_Den(ref),
 		v1alpha1.DenList{}.OpenAPIModelName():                          schema_pkg_apis_den_v1alpha1_DenList(ref),
 		v1alpha1.DenSpec{}.OpenAPIModelName():                          schema_pkg_apis_den_v1alpha1_DenSpec(ref),
@@ -333,6 +334,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		v1alpha1.HistorySpec{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_HistorySpec(ref),
 		v1alpha1.ReportSpec{}.OpenAPIModelName():                       schema_pkg_apis_den_v1alpha1_ReportSpec(ref),
 		v1alpha1.Size{}.OpenAPIModelName():                             schema_pkg_apis_den_v1alpha1_Size(ref),
+		v1alpha1.Space{}.OpenAPIModelName():                            schema_pkg_apis_den_v1alpha1_Space(ref),
+		v1alpha1.SpaceList{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_SpaceList(ref),
+		v1alpha1.SpaceSpec{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_SpaceSpec(ref),
+		v1alpha1.TerminalView{}.OpenAPIModelName():                     schema_pkg_apis_den_v1alpha1_TerminalView(ref),
+		v1alpha1.View{}.OpenAPIModelName():                             schema_pkg_apis_den_v1alpha1_View(ref),
+		v1alpha1.ViewList{}.OpenAPIModelName():                         schema_pkg_apis_den_v1alpha1_ViewList(ref),
+		v1alpha1.ViewSpec{}.OpenAPIModelName():                         schema_pkg_apis_den_v1alpha1_ViewSpec(ref),
 	}
 }
 
@@ -17488,6 +17496,33 @@ func schema_k8sio_apimachinery_pkg_version_Info(ref common.ReferenceCallback) co
 	}
 }
 
+func schema_pkg_apis_den_v1alpha1_Badge(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"text": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"tone": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tone is a styling hint, e.g. info or muted.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"text"},
+			},
+		},
+	}
+}
+
 func schema_pkg_apis_den_v1alpha1_Den(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -17880,5 +17915,323 @@ func schema_pkg_apis_den_v1alpha1_Size(ref common.ReferenceCallback) common.Open
 				Required: []string{"cols", "rows"},
 			},
 		},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_Space(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Space is a node in dense's sidebar tree. Outside tools (such as ccwt) decide what a space means; dense only draws it.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(metav1.ObjectMeta{}.OpenAPIModelName()),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(v1alpha1.SpaceSpec{}.OpenAPIModelName()),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			metav1.ObjectMeta{}.OpenAPIModelName(), v1alpha1.SpaceSpec{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_SpaceList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(metav1.ListMeta{}.OpenAPIModelName()),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref(v1alpha1.Space{}.OpenAPIModelName()),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			metav1.ListMeta{}.OpenAPIModelName(), v1alpha1.Space{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_SpaceSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"parent": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Parent is the name of the parent Space in the same namespace. Empty means top level.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"order": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Order is the position among siblings, lowest first.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"title": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"subtitle": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Subtitle is an optional second line.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"icon": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"badges": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref(v1alpha1.Badge{}.OpenAPIModelName()),
+									},
+								},
+							},
+						},
+					},
+					"state": {
+						SchemaProps: spec.SchemaProps{
+							Description: "State drives the state dot.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"collapsed": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			v1alpha1.Badge{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_TerminalView(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"den": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Den is the name of the Den to attach to, in the same namespace.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"den"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_View(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "View is one tab inside a Space.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(metav1.ObjectMeta{}.OpenAPIModelName()),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(v1alpha1.ViewSpec{}.OpenAPIModelName()),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			metav1.ObjectMeta{}.OpenAPIModelName(), v1alpha1.ViewSpec{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_ViewList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(metav1.ListMeta{}.OpenAPIModelName()),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref(v1alpha1.View{}.OpenAPIModelName()),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			metav1.ListMeta{}.OpenAPIModelName(), v1alpha1.View{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_ViewSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"space": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Space is the name of the Space this tab belongs to, in the same namespace.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"order": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Order is the position among the space's tabs, lowest first.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"title": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind says what the tab shows, and which block below is set.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"terminal": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref(v1alpha1.TerminalView{}.OpenAPIModelName()),
+						},
+					},
+				},
+				Required: []string{"space", "kind"},
+			},
+		},
+		Dependencies: []string{
+			v1alpha1.TerminalView{}.OpenAPIModelName()},
 	}
 }

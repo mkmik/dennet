@@ -106,3 +106,93 @@ type DenList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Den `json:"items"`
 }
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// Space is a node in dense's sidebar tree. Outside tools (such as ccwt)
+// decide what a space means; dense only draws it.
+type Space struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec SpaceSpec `json:"spec,omitempty"`
+}
+
+type SpaceSpec struct {
+	// Parent is the name of the parent Space in the same namespace.
+	// Empty means top level.
+	Parent string `json:"parent,omitempty"`
+	// Order is the position among siblings, lowest first.
+	Order int32  `json:"order,omitempty"`
+	Title string `json:"title,omitempty"`
+	// Subtitle is an optional second line.
+	Subtitle string  `json:"subtitle,omitempty"`
+	Icon     string  `json:"icon,omitempty"`
+	Badges   []Badge `json:"badges,omitempty"`
+	// State drives the state dot.
+	State     SpaceState `json:"state,omitempty"`
+	Collapsed bool       `json:"collapsed,omitempty"`
+}
+
+type Badge struct {
+	Text string `json:"text"`
+	// Tone is a styling hint, e.g. info or muted.
+	Tone string `json:"tone,omitempty"`
+}
+
+type SpaceState string
+
+const (
+	SpaceIdle    SpaceState = "idle"
+	SpaceBusy    SpaceState = "busy"
+	SpaceWaiting SpaceState = "waiting"
+	SpaceError   SpaceState = "error"
+)
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type SpaceList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Space `json:"items"`
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// View is one tab inside a Space.
+type View struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec ViewSpec `json:"spec,omitempty"`
+}
+
+type ViewSpec struct {
+	// Space is the name of the Space this tab belongs to, in the same namespace.
+	Space string `json:"space"`
+	// Order is the position among the space's tabs, lowest first.
+	Order int32  `json:"order,omitempty"`
+	Title string `json:"title,omitempty"`
+	// Kind says what the tab shows, and which block below is set.
+	Kind     ViewKind      `json:"kind"`
+	Terminal *TerminalView `json:"terminal,omitempty"`
+}
+
+type ViewKind string
+
+const ViewTerminal ViewKind = "terminal"
+
+type TerminalView struct {
+	// Den is the name of the Den to attach to, in the same namespace.
+	Den string `json:"den"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type ViewList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []View `json:"items"`
+}

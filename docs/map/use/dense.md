@@ -11,6 +11,14 @@ on = "/api/den"
 why = "Lists, creates and watches dens"
 
 [[needs]]
+on = "/api/space"
+why = "Draws the sidebar tree from Spaces"
+
+[[needs]]
+on = "/api/view"
+why = "Draws each space's tabs from Views"
+
+[[needs]]
 on = "/proxy/subresources#attach"
 why = "Its terminal is an attached den"
 
