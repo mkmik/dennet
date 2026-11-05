@@ -19,7 +19,7 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
 
-	denv1 "github.com/mkmik/dennet/pkg/apis/den/v1alpha1"
+	denv1 "mkm.pub/dennet/pkg/apis/den/v1alpha1"
 )
 
 // NewDen returns the storage for dens and dens/status.

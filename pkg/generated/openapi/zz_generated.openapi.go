@@ -8,7 +8,6 @@
 package openapi
 
 import (
-	v1alpha1 "github.com/mkmik/dennet/pkg/apis/den/v1alpha1"
 	v1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
@@ -17,18 +16,11 @@ import (
 	version "k8s.io/apimachinery/pkg/version"
 	common "k8s.io/kube-openapi/pkg/common"
 	spec "k8s.io/kube-openapi/pkg/validation/spec"
+	v1alpha1 "mkm.pub/dennet/pkg/apis/den/v1alpha1"
 )
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		v1alpha1.Den{}.OpenAPIModelName():                              schema_pkg_apis_den_v1alpha1_Den(ref),
-		v1alpha1.DenList{}.OpenAPIModelName():                          schema_pkg_apis_den_v1alpha1_DenList(ref),
-		v1alpha1.DenSpec{}.OpenAPIModelName():                          schema_pkg_apis_den_v1alpha1_DenSpec(ref),
-		v1alpha1.DenStatus{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_DenStatus(ref),
-		v1alpha1.EnvVar{}.OpenAPIModelName():                           schema_pkg_apis_den_v1alpha1_EnvVar(ref),
-		v1alpha1.HistorySpec{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_HistorySpec(ref),
-		v1alpha1.ReportSpec{}.OpenAPIModelName():                       schema_pkg_apis_den_v1alpha1_ReportSpec(ref),
-		v1alpha1.Size{}.OpenAPIModelName():                             schema_pkg_apis_den_v1alpha1_Size(ref),
 		v1.Lease{}.OpenAPIModelName():                                  schema_k8sio_api_coordination_v1_Lease(ref),
 		v1.LeaseList{}.OpenAPIModelName():                              schema_k8sio_api_coordination_v1_LeaseList(ref),
 		v1.LeaseSpec{}.OpenAPIModelName():                              schema_k8sio_api_coordination_v1_LeaseSpec(ref),
@@ -333,401 +325,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		runtime.TypeMeta{}.OpenAPIModelName():                          schema_k8sio_apimachinery_pkg_runtime_TypeMeta(ref),
 		runtime.Unknown{}.OpenAPIModelName():                           schema_k8sio_apimachinery_pkg_runtime_Unknown(ref),
 		version.Info{}.OpenAPIModelName():                              schema_k8sio_apimachinery_pkg_version_Info(ref),
-	}
-}
-
-func schema_pkg_apis_den_v1alpha1_Den(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Den is one background terminal session, run by a den process. spec is written by whoever creates the Den; status is written only by den.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref(metav1.ObjectMeta{}.OpenAPIModelName()),
-						},
-					},
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref(v1alpha1.DenSpec{}.OpenAPIModelName()),
-						},
-					},
-					"status": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref(v1alpha1.DenStatus{}.OpenAPIModelName()),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			v1alpha1.DenSpec{}.OpenAPIModelName(), v1alpha1.DenStatus{}.OpenAPIModelName(), metav1.ObjectMeta{}.OpenAPIModelName()},
-	}
-}
-
-func schema_pkg_apis_den_v1alpha1_DenList(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref(metav1.ListMeta{}.OpenAPIModelName()),
-						},
-					},
-					"items": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref(v1alpha1.Den{}.OpenAPIModelName()),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"items"},
-			},
-		},
-		Dependencies: []string{
-			v1alpha1.Den{}.OpenAPIModelName(), metav1.ListMeta{}.OpenAPIModelName()},
-	}
-}
-
-func schema_pkg_apis_den_v1alpha1_DenSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "DenSpec follows Spec in den's src/spec.zig. Report, HostName and RestartPolicy are dennet's own; den ignores them.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"command": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Command is the program and its arguments. Empty means the user's shell as a login shell. Immutable.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
-					"workingDir": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"env": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Env is added to the environment; it wins over inherited values.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref(v1alpha1.EnvVar{}.OpenAPIModelName()),
-									},
-								},
-							},
-						},
-					},
-					"inheritEnv": {
-						SchemaProps: spec.SchemaProps{
-							Description: "InheritEnv names variables copied from the environment den was started with: exact names, or prefixes ending in \"*\". [\"*\"] copies all.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
-					"size": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Size of the PTY while no client is attached.",
-							Ref:         ref(v1alpha1.Size{}.OpenAPIModelName()),
-						},
-					},
-					"paused": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Paused stops the program (SIGSTOP) while true.",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"history": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref(v1alpha1.HistorySpec{}.OpenAPIModelName()),
-						},
-					},
-					"report": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref(v1alpha1.ReportSpec{}.OpenAPIModelName()),
-						},
-					},
-					"hostName": {
-						SchemaProps: spec.SchemaProps{
-							Description: "HostName is the Host that runs this den. Empty means the host dennet runs on.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"restartPolicy": {
-						SchemaProps: spec.SchemaProps{
-							Description: "RestartPolicy is Never (default) or OnFailure. Handled by dennet, not den.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			v1alpha1.EnvVar{}.OpenAPIModelName(), v1alpha1.HistorySpec{}.OpenAPIModelName(), v1alpha1.ReportSpec{}.OpenAPIModelName(), v1alpha1.Size{}.OpenAPIModelName()},
-	}
-}
-
-func schema_pkg_apis_den_v1alpha1_DenStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"phase": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"pid": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"host": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"socket": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"log": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Log is den's log file, next to the socket.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"clients": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"screen": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"title": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"cwd": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"lastOutputTime": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref(metav1.Time{}.OpenAPIModelName()),
-						},
-					},
-					"exitCode": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"observedGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ObservedGeneration is the spec generation den has applied.",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			metav1.Time{}.OpenAPIModelName()},
-	}
-}
-
-func schema_pkg_apis_den_v1alpha1_EnvVar(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Default: "",
-							Type:    []string{"string"},
-							Format:  "",
-						},
-					},
-					"value": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-				},
-				Required: []string{"name"},
-			},
-		},
-	}
-}
-
-func schema_pkg_apis_den_v1alpha1_HistorySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"memoryLines": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MemoryLines is the scrollback kept in memory. Defaults to 5000.",
-							Type:        []string{"integer"},
-							Format:      "int32",
-						},
-					},
-					"keepAfterExit": {
-						SchemaProps: spec.SchemaProps{
-							Description: "KeepAfterExit is how long an exited den keeps its socket and history.",
-							Ref:         ref(metav1.Duration{}.OpenAPIModelName()),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			metav1.Duration{}.OpenAPIModelName()},
-	}
-}
-
-func schema_pkg_apis_den_v1alpha1_ReportSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"fields": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Fields lists the status fields den publishes, e.g. title, cwd, screen, clients.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
-					"interval": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref(metav1.Duration{}.OpenAPIModelName()),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			metav1.Duration{}.OpenAPIModelName()},
-	}
-}
-
-func schema_pkg_apis_den_v1alpha1_Size(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"cols": {
-						SchemaProps: spec.SchemaProps{
-							Default: 0,
-							Type:    []string{"integer"},
-							Format:  "int32",
-						},
-					},
-					"rows": {
-						SchemaProps: spec.SchemaProps{
-							Default: 0,
-							Type:    []string{"integer"},
-							Format:  "int32",
-						},
-					},
-				},
-				Required: []string{"cols", "rows"},
-			},
-		},
+		v1alpha1.Den{}.OpenAPIModelName():                              schema_pkg_apis_den_v1alpha1_Den(ref),
+		v1alpha1.DenList{}.OpenAPIModelName():                          schema_pkg_apis_den_v1alpha1_DenList(ref),
+		v1alpha1.DenSpec{}.OpenAPIModelName():                          schema_pkg_apis_den_v1alpha1_DenSpec(ref),
+		v1alpha1.DenStatus{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_DenStatus(ref),
+		v1alpha1.EnvVar{}.OpenAPIModelName():                           schema_pkg_apis_den_v1alpha1_EnvVar(ref),
+		v1alpha1.HistorySpec{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_HistorySpec(ref),
+		v1alpha1.ReportSpec{}.OpenAPIModelName():                       schema_pkg_apis_den_v1alpha1_ReportSpec(ref),
+		v1alpha1.Size{}.OpenAPIModelName():                             schema_pkg_apis_den_v1alpha1_Size(ref),
 	}
 }
 
@@ -17878,6 +17483,401 @@ func schema_k8sio_apimachinery_pkg_version_Info(ref common.ReferenceCallback) co
 					},
 				},
 				Required: []string{"major", "minor", "gitVersion", "gitCommit", "gitTreeState", "buildDate", "goVersion", "compiler", "platform"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_Den(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Den is one background terminal session, run by a den process. spec is written by whoever creates the Den; status is written only by den.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(metav1.ObjectMeta{}.OpenAPIModelName()),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(v1alpha1.DenSpec{}.OpenAPIModelName()),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(v1alpha1.DenStatus{}.OpenAPIModelName()),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			metav1.ObjectMeta{}.OpenAPIModelName(), v1alpha1.DenSpec{}.OpenAPIModelName(), v1alpha1.DenStatus{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_DenList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(metav1.ListMeta{}.OpenAPIModelName()),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref(v1alpha1.Den{}.OpenAPIModelName()),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			metav1.ListMeta{}.OpenAPIModelName(), v1alpha1.Den{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_DenSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "DenSpec follows Spec in den's src/spec.zig. Report, HostName and RestartPolicy are dennet's own; den ignores them.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"command": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Command is the program and its arguments. Empty means the user's shell as a login shell. Immutable.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"workingDir": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Env is added to the environment; it wins over inherited values.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref(v1alpha1.EnvVar{}.OpenAPIModelName()),
+									},
+								},
+							},
+						},
+					},
+					"inheritEnv": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InheritEnv names variables copied from the environment den was started with: exact names, or prefixes ending in \"*\". [\"*\"] copies all.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"size": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Size of the PTY while no client is attached.",
+							Ref:         ref(v1alpha1.Size{}.OpenAPIModelName()),
+						},
+					},
+					"paused": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Paused stops the program (SIGSTOP) while true.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"history": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(v1alpha1.HistorySpec{}.OpenAPIModelName()),
+						},
+					},
+					"report": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(v1alpha1.ReportSpec{}.OpenAPIModelName()),
+						},
+					},
+					"hostName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HostName is the Host that runs this den. Empty means the host dennet runs on.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"restartPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RestartPolicy is Never (default) or OnFailure. Handled by dennet, not den.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			v1alpha1.EnvVar{}.OpenAPIModelName(), v1alpha1.HistorySpec{}.OpenAPIModelName(), v1alpha1.ReportSpec{}.OpenAPIModelName(), v1alpha1.Size{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_DenStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"phase": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"pid": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"host": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"socket": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"log": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Log is den's log file, next to the socket.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"clients": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"screen": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"title": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"cwd": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"lastOutputTime": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref(metav1.Time{}.OpenAPIModelName()),
+						},
+					},
+					"exitCode": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"observedGeneration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ObservedGeneration is the spec generation den has applied.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			metav1.Time{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_EnvVar(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_HistorySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"memoryLines": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MemoryLines is the scrollback kept in memory. Defaults to 5000.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"keepAfterExit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "KeepAfterExit is how long an exited den keeps its socket and history.",
+							Ref:         ref(metav1.Duration{}.OpenAPIModelName()),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			metav1.Duration{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_ReportSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"fields": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Fields lists the status fields den publishes, e.g. title, cwd, screen, clients.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"interval": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref(metav1.Duration{}.OpenAPIModelName()),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			metav1.Duration{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_Size(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"cols": {
+						SchemaProps: spec.SchemaProps{
+							Default: 0,
+							Type:    []string{"integer"},
+							Format:  "int32",
+						},
+					},
+					"rows": {
+						SchemaProps: spec.SchemaProps{
+							Default: 0,
+							Type:    []string{"integer"},
+							Format:  "int32",
+						},
+					},
+				},
+				Required: []string{"cols", "rows"},
 			},
 		},
 	}

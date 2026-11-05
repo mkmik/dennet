@@ -22,8 +22,8 @@ import (
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 	"k8s.io/kubectl/pkg/util/term"
 
-	"github.com/mkmik/dennet/internal/server"
-	denv1 "github.com/mkmik/dennet/pkg/apis/den/v1alpha1"
+	"mkm.pub/dennet/internal/server"
+	denv1 "mkm.pub/dennet/pkg/apis/den/v1alpha1"
 )
 
 func main() {
