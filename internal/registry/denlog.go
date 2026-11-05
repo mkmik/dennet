@@ -17,7 +17,7 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
 
-	denv1 "github.com/mkmik/dennet/pkg/apis/den/v1alpha1"
+	denv1 "mkm.pub/dennet/pkg/apis/den/v1alpha1"
 )
 
 // NewDenLog returns dens/log: GET it for what `den logs` prints, the

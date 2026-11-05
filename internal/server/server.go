@@ -38,11 +38,11 @@ import (
 	basecompatibility "k8s.io/component-base/compatibility"
 	baseversion "k8s.io/component-base/version"
 
-	"github.com/mkmik/dennet/internal/manifests"
-	"github.com/mkmik/dennet/internal/memstore"
-	"github.com/mkmik/dennet/internal/registry"
-	denv1 "github.com/mkmik/dennet/pkg/apis/den/v1alpha1"
-	"github.com/mkmik/dennet/pkg/generated/openapi"
+	"mkm.pub/dennet/internal/manifests"
+	"mkm.pub/dennet/internal/memstore"
+	"mkm.pub/dennet/internal/registry"
+	denv1 "mkm.pub/dennet/pkg/apis/den/v1alpha1"
+	"mkm.pub/dennet/pkg/generated/openapi"
 )
 
 var (

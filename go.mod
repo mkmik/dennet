@@ -1,4 +1,4 @@
-module github.com/mkmik/dennet
+module mkm.pub/dennet
 
 go 1.27.3
 
