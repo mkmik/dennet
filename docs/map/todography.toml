@@ -1,0 +1,69 @@
+# dennet's map. `todography lint` checks it; `todography open` draws it.
+# Format: https://mkmik.github.io/todography/reference/format.html
+# Goals, milestones and open questions come from the dennet PRD.
+title = "dennet"
+
+[[band]]
+id = "use"
+title = "What you use"
+
+[[band]]
+id = "api"
+title = "What it serves"
+
+[[band]]
+id = "logic"
+title = "What it does"
+
+[[band]]
+id = "core"
+title = "What runs it"
+
+[[band]]
+id = "ship"
+title = "How it ships"
+
+[[band]]
+id = "deps"
+title = "What it stands on"
+
+[[milestone]]
+id = "m1"
+title = "Milestone 1"
+summary = "Embedded API server with Den and Lease, in memory, on a Unix socket; kubectl get dens works"
+
+[[milestone]]
+id = "m2"
+title = "Milestone 2"
+summary = "den integration: spec GET, watch and status PATCH from a real den"
+
+[[milestone]]
+id = "m3"
+title = "Milestone 3"
+summary = "Local spawning (option A), finalizer and liveness controllers"
+
+[[milestone]]
+id = "m4"
+title = "Milestone 4"
+summary = "Subresources proxied to den's socket: snapshot, input, signal, then attach"
+
+[[milestone]]
+id = "m5"
+title = "Milestone 5"
+summary = "Cleanup and restart controllers, tokens and the den-scoped policy"
+
+[[kind]]
+id = "code"
+summary = "Code in this repository"
+
+[[kind]]
+id = "infra"
+summary = "Repository machinery: tests, CI"
+
+[[kind]]
+id = "dep"
+summary = "A Go module dennet depends on"
+
+[[kind]]
+id = "external"
+summary = "Another project in the den stack"

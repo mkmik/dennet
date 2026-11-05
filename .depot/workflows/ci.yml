@@ -27,3 +27,13 @@ jobs:
       - run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
       - run: go vet ./...
       - run: go test -race ./...
+
+  map:
+    runs-on: depot-ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: mkmik/todography@fbeea6a9073bfad13774b13cc61dadb1cc4120a4 # v0.21.0
+        with:
+          args: --strict

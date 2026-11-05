@@ -82,3 +82,9 @@ a restart.
 go generate ./...   # deepcopy and OpenAPI code
 go test ./...
 ```
+
+`docs/map/` is a [todography](https://github.com/mkmik/todography) map of
+dennet's parts: what each does, how far along it is, and what it needs.
+`todography next --all` lists the work that's left; `todography open` draws
+the map. Change the map in the same commit as the code, and run
+`todography lint` before committing.
