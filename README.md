@@ -19,7 +19,7 @@ empty, the path den itself uses for that namespace and name on this host.
 ## Run
 
 ```sh
-go install .
+go install mkm.pub/dennet@latest
 dennet server run
 dennet get dens
 ```
