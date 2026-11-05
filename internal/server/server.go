@@ -192,6 +192,14 @@ func newAPIServer(token, socket, manifestsDir string) (*genericapiserver.Generic
 	if err != nil {
 		return nil, err
 	}
+	space, err := registry.NewSpace(Scheme, optsFor(denv1.SchemeGroupVersion))
+	if err != nil {
+		return nil, err
+	}
+	view, err := registry.NewView(Scheme, optsFor(denv1.SchemeGroupVersion))
+	if err != nil {
+		return nil, err
+	}
 	lease, err := registry.NewLease(Scheme, optsFor(coordinationv1.SchemeGroupVersion))
 	if err != nil {
 		return nil, err
@@ -202,6 +210,8 @@ func newAPIServer(token, socket, manifestsDir string) (*genericapiserver.Generic
 		"dens":        den,
 		"dens/status": denStatus,
 		"dens/log":    registry.NewDenLog(den),
+		"spaces":      space,
+		"views":       view,
 	}
 	leaseGroup := genericapiserver.NewDefaultAPIGroupInfo(coordinationv1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 	leaseGroup.VersionedResourcesStorageMap[coordinationv1.SchemeGroupVersion.Version] = map[string]rest.Storage{

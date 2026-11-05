@@ -116,6 +116,42 @@ func TestDenProtocol(t *testing.T) {
 	}
 }
 
+// TestSpacesAndViews checks that Spaces and Views are served and that bad
+// specs are rejected.
+func TestSpacesAndViews(t *testing.T) {
+	c, _ := start(t, "")
+	const base = "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/default/"
+	post := func(res, body string) int {
+		t.Helper()
+		resp, err := c.Post(base+res, "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	for _, tc := range []struct {
+		res, body string
+		want      int
+	}{
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"kubecfg"},"spec":{"title":"kubecfg"}}`, 201},
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m"},"spec":{"parent":"kubecfg","order":20,"state":"waiting","badges":[{"text":"MR !412","tone":"info"}]}}`, 201},
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"state":"sleepy"}}`, 422},
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"parent":"x"}}`, 422},
+		{"views", `{"kind":"View","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m-claude"},"spec":{"space":"m","kind":"terminal","terminal":{"den":"m-claude"}}}`, 201},
+		{"views", `{"kind":"View","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","kind":"terminal"}}`, 422},
+		{"views", `{"kind":"View","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","kind":"browser"}}`, 422},
+		{"views", `{"kind":"View","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"kind":"terminal","terminal":{"den":"d"}}}`, 422},
+	} {
+		if got := post(tc.res, tc.body); got != tc.want {
+			t.Errorf("POST %s %s: got %d, want %d", tc.res, tc.body, got, tc.want)
+		}
+	}
+	if code := get(t, c, base+"views/m-claude"); code != 200 {
+		t.Fatalf("GET view: %d", code)
+	}
+}
+
 // TestManifests checks that files in the manifests dir are applied at start
 // and as they change, and that their objects go when they are dropped.
 func TestManifests(t *testing.T) {

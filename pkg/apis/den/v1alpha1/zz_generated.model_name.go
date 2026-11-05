@@ -8,6 +8,11 @@
 package v1alpha1
 
 // OpenAPIModelName returns the OpenAPI model name for this type.
+func (in Badge) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.Badge"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
 func (in Den) OpenAPIModelName() string {
 	return "pub.mkm.den.v1alpha1.Den"
 }
@@ -45,4 +50,39 @@ func (in ReportSpec) OpenAPIModelName() string {
 // OpenAPIModelName returns the OpenAPI model name for this type.
 func (in Size) OpenAPIModelName() string {
 	return "pub.mkm.den.v1alpha1.Size"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in Space) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.Space"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in SpaceList) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.SpaceList"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in SpaceSpec) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.SpaceSpec"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in TerminalView) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.TerminalView"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in View) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.View"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in ViewList) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.ViewList"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in ViewSpec) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.ViewSpec"
 }
