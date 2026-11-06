@@ -49,6 +49,32 @@ The token, certificate and kubeconfig live in `$XDG_STATE_HOME/dennet`
 (default `~/.local/state/dennet`). Use `--state-dir` and `--socket` to change
 where they go; the client commands take the same flags.
 
+## Remote hosts
+
+A `Host` is another machine running dennet. Its objects show up here in the
+namespace with the Host's name; on that machine they are in `default`.
+
+```sh
+dennet apply -f - <<EOF
+apiVersion: den.mkm.pub/v1alpha1
+kind: Host
+metadata: {name: box}
+spec:
+  ssh: me@box.example     # anything ssh accepts, e.g. an alias from ~/.ssh/config
+  dennet: ~/go/bin/dennet # optional, defaults to dennet on the remote PATH
+EOF
+dennet get dens -n box
+```
+
+dennet runs `ssh <spec.ssh> <spec.dennet> server dial-stdio`, which connects
+to the dennet socket on that machine. One ssh carries every request for the
+Host. ssh runs in batch mode, so it needs a key or an agent, not a password.
+
+A request in namespace `box` is sent there with `default` in its place, and
+`metadata.namespace` is changed back to `box` in the answer. Nothing is
+copied, so while the Host can't be reached its namespace answers 502.
+`-A` lists only this machine's objects.
+
 ## Storage
 
 dennet runs etcd inside its own process. Objects are kept in

@@ -14,6 +14,11 @@ status = "done"
 milestone = "m1"
 
 [[feature]]
+id = "dial-stdio"
+title = "dennet server dial-stdio, which a Host's ssh runs"
+status = "done"
+
+[[feature]]
 id = "kubectl"
 title = "Every kubectl command, over the Unix socket, with no kubeconfig"
 status = "done"

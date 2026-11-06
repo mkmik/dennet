@@ -19,7 +19,13 @@ import (
 func newPlain(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter, gr schema.GroupResource, singular string,
 	newObj, newList func() runtime.Object, validate func(runtime.Object) field.ErrorList,
 ) (*registry.Store, error) {
-	s := plainStrategy{typer, names.SimpleNameGenerator, validate}
+	return newStore(plainStrategy{typer, names.SimpleNameGenerator, validate, false}, opts, gr, singular, newObj, newList)
+}
+
+// newStore is newPlain for either scope.
+func newStore(s plainStrategy, opts generic.RESTOptionsGetter, gr schema.GroupResource, singular string,
+	newObj, newList func() runtime.Object,
+) (*registry.Store, error) {
 	store := &registry.Store{
 		NewFunc:                   newObj,
 		NewListFunc:               newList,
@@ -37,9 +43,10 @@ type plainStrategy struct {
 	runtime.ObjectTyper
 	names.NameGenerator
 	validate func(runtime.Object) field.ErrorList
+	cluster  bool // cluster-scoped, not namespaced
 }
 
-func (plainStrategy) NamespaceScoped() bool                                            { return true }
+func (s plainStrategy) NamespaceScoped() bool                                          { return !s.cluster }
 func (plainStrategy) AllowCreateOnUpdate(context.Context) bool                         { return false }
 func (plainStrategy) AllowUnconditionalUpdate(context.Context) bool                    { return true }
 func (plainStrategy) Canonicalize(runtime.Object)                                      {}
@@ -55,7 +62,7 @@ func (s plainStrategy) Validate(_ context.Context, obj runtime.Object) field.Err
 	if err != nil {
 		return field.ErrorList{field.InternalError(field.NewPath("metadata"), err)}
 	}
-	errs := validation.ValidateObjectMetaAccessor(m, true, validation.NameIsDNSSubdomain, field.NewPath("metadata"))
+	errs := validation.ValidateObjectMetaAccessor(m, !s.cluster, validation.NameIsDNSSubdomain, field.NewPath("metadata"))
 	return append(errs, s.spec(obj)...)
 }
 

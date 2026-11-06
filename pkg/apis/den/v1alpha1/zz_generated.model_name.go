@@ -43,6 +43,21 @@ func (in HistorySpec) OpenAPIModelName() string {
 }
 
 // OpenAPIModelName returns the OpenAPI model name for this type.
+func (in Host) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.Host"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in HostList) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.HostList"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in HostSpec) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.HostSpec"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
 func (in ReportSpec) OpenAPIModelName() string {
 	return "pub.mkm.den.v1alpha1.ReportSpec"
 }

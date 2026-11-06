@@ -17,6 +17,8 @@ import (
 	"time"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
+
+	denv1 "mkm.pub/dennet/pkg/apis/den/v1alpha1"
 )
 
 // TestDenProtocol drives dennet over its Unix socket with plain HTTP, the way
@@ -321,4 +323,66 @@ func fakeDen(t *testing.T, path, text string) {
 		conn.Write(binary.LittleEndian.AppendUint32(nil, uint32(1+len(text))))
 		conn.Write(append([]byte{7}, text...))
 	}()
+}
+
+// TestHost checks that a namespace named like a Host is the default
+// namespace of the dennet on that host: writes, reads and watches go there,
+// and come back with the Host's namespace.
+func TestHost(t *testing.T) {
+	far, farDir := start(t)
+	here, _ := start(t)
+	ssh := dialHost
+	t.Cleanup(func() { dialHost = ssh })
+	dialHost = func(spec denv1.HostSpec) (net.Conn, error) {
+		if spec.SSH != "far.example" {
+			t.Errorf("dialled %q", spec.SSH)
+		}
+		return net.Dial("unix", filepath.Join(farDir, "s"))
+	}
+
+	post := func(c *http.Client, url, body string) (int, map[string]any) {
+		t.Helper()
+		resp, err := c.Post(url, "application/json", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		var m map[string]any
+		json.NewDecoder(resp.Body).Decode(&m)
+		return resp.StatusCode, m
+	}
+	const hosts = "http://dennet/apis/den.mkm.pub/v1alpha1/hosts"
+	if code, m := post(here, hosts, `{"kind":"Host","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"default"},"spec":{"ssh":"x"}}`); code != 422 {
+		t.Fatalf("Host named default: want 422, got %d %v", code, m)
+	}
+	if code, m := post(here, hosts, `{"kind":"Host","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"far"},"spec":{"ssh":"-oProxyCommand=x"}}`); code != 422 {
+		t.Fatalf("ssh option as destination: want 422, got %d %v", code, m)
+	}
+	if code, m := post(here, hosts, `{"kind":"Host","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"far"},"spec":{"ssh":"far.example"}}`); code != 201 {
+		t.Fatalf("Host: %d %v", code, m)
+	}
+
+	const viaHere = "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/far/spaces"
+	const onFar = "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/default/spaces"
+	nsOf := func(m map[string]any) any { return m["metadata"].(map[string]any)["namespace"] }
+
+	code, m := post(here, viaHere, `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"a","namespace":"far"}}`)
+	if code != 201 || nsOf(m) != "far" {
+		t.Fatalf("create through Host: %d %v", code, m)
+	}
+	if code := get(t, far, onFar+"/a"); code != 200 {
+		t.Fatalf("on far, default/a: %d", code)
+	}
+	if code := get(t, here, "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/default/spaces/a"); code != 404 {
+		t.Fatalf("here, default/a: want 404, got %d", code)
+	}
+
+	events := watch(t, here, viaHere+"?watch=true")
+	if e := next(t, events); e.Type != "ADDED" || nsOf(e.Object) != "far" {
+		t.Fatalf("watch through Host: %v", e)
+	}
+	post(far, onFar, `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"b"}}`)
+	if e := next(t, events); e.Type != "ADDED" || e.Object["metadata"].(map[string]any)["name"] != "b" || nsOf(e.Object) != "far" {
+		t.Fatalf("watch through Host: %v", e)
+	}
 }
