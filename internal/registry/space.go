@@ -1,8 +1,14 @@
 package registry
 
 import (
+	"context"
+	"fmt"
+	"time"
+
 	"k8s.io/apimachinery/pkg/api/validation"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/generic/registry"
@@ -12,7 +18,7 @@ import (
 
 // NewSpace returns the storage for spaces, the nodes of dense's sidebar tree.
 func NewSpace(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*registry.Store, error) {
-	return newPlain(typer, opts, denv1.SchemeGroupVersion.WithResource("spaces").GroupResource(), "space",
+	store, err := newPlain(typer, opts, denv1.SchemeGroupVersion.WithResource("spaces").GroupResource(), "space",
 		func() runtime.Object { return &denv1.Space{} },
 		func() runtime.Object { return &denv1.SpaceList{} },
 		func(obj runtime.Object) field.ErrorList {
@@ -38,6 +44,44 @@ func NewSpace(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*regis
 			}
 			return errs
 		})
+	if store != nil {
+		store.TableConvertor = spaceTable{}
+	}
+	return store, err
+}
+
+// spaceTable is what `kubectl get spaces` prints.
+type spaceTable struct{}
+
+func (spaceTable) ConvertToTable(_ context.Context, obj runtime.Object, _ runtime.Object) (*metav1.Table, error) {
+	t := &metav1.Table{ColumnDefinitions: []metav1.TableColumnDefinition{
+		{Name: "Name", Type: "string", Format: "name"},
+		{Name: "Title", Type: "string"},
+		{Name: "Age", Type: "date"},
+	}}
+	row := func(s *denv1.Space) {
+		age := "<unknown>"
+		if !s.CreationTimestamp.IsZero() {
+			age = duration.HumanDuration(time.Since(s.CreationTimestamp.Time))
+		}
+		t.Rows = append(t.Rows, metav1.TableRow{
+			Cells:  []any{s.Name, s.Spec.Title, age},
+			Object: runtime.RawExtension{Object: s},
+		})
+	}
+	switch o := obj.(type) {
+	case *denv1.Space:
+		row(o)
+		t.ResourceVersion = o.ResourceVersion
+	case *denv1.SpaceList:
+		for i := range o.Items {
+			row(&o.Items[i])
+		}
+		t.ResourceVersion, t.Continue = o.ResourceVersion, o.Continue
+	default:
+		return nil, fmt.Errorf("unexpected type %T", obj)
+	}
+	return t, nil
 }
 
 // NewSurface returns the storage for surfaces, the tabs inside a Space.
