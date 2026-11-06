@@ -12,10 +12,13 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"go.etcd.io/etcd/server/v3/embed"
 	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,8 +41,6 @@ import (
 	basecompatibility "k8s.io/component-base/compatibility"
 	baseversion "k8s.io/component-base/version"
 
-	"mkm.pub/dennet/internal/manifests"
-	"mkm.pub/dennet/internal/memstore"
 	"mkm.pub/dennet/internal/registry"
 	denv1 "mkm.pub/dennet/pkg/apis/den/v1alpha1"
 	"mkm.pub/dennet/pkg/generated/openapi"
@@ -66,46 +67,56 @@ func init() {
 }
 
 type Options struct {
-	// StateDir holds the token, serving certificate and kubeconfig.
+	// StateDir holds the token, serving certificate, kubeconfig and the
+	// etcd data dir.
 	StateDir string
 	// Socket is the Unix socket path. Access over it needs no token.
 	Socket string
 	// TCPAddr, if set, is a TLS listener that requires the user token.
 	TCPAddr string
-	// Manifests, if set, is a directory whose YAML and JSON files are
-	// applied as they change.
-	Manifests string
 }
 
 type localConnKey struct{}
 
 // Run serves the API until ctx is cancelled.
 func Run(ctx context.Context, o Options) error {
+	if err := os.MkdirAll(o.StateDir, 0o700); err != nil {
+		return err
+	}
 	// Only TCP needs the token; the Unix socket is guarded by its file mode.
 	var token string
 	if o.TCPAddr != "" {
-		if err := os.MkdirAll(o.StateDir, 0o700); err != nil {
-			return err
-		}
 		var err error
 		if token, err = loadOrCreateToken(filepath.Join(o.StateDir, "token")); err != nil {
 			return err
 		}
 	}
 
-	srv, err := newAPIServer(token, o.Socket, o.Manifests)
+	// Listen first: it fails fast when another dennet is running, before
+	// etcd waits on the lock of the data dir that one holds.
+	unixLn, err := listenUnix(o.Socket)
 	if err != nil {
+		return err
+	}
+	defer os.Remove(o.Socket)
+	etcd, etcdURL, err := startEtcd(o.StateDir)
+	if err != nil {
+		unixLn.Close()
+		return err
+	}
+	defer etcd.Close()
+	fmt.Fprintf(os.Stderr, "dennet: storing objects in %s (stop dennet and delete it to start from nothing)\n", etcd.Config().Dir)
+
+	srv, err := newAPIServer(token, o.Socket, etcdURL)
+	if err != nil {
+		unixLn.Close()
 		return err
 	}
 	prepared := srv.PrepareRun()
 	handler := prepared.Handler
 
-	errc := make(chan error, 3)
-
-	unixLn, err := listenUnix(o.Socket)
-	if err != nil {
-		return err
-	}
+	errc := make(chan error, 4)
+	go func() { errc <- <-etcd.Err() }()
 	unixSrv := &http.Server{
 		Handler: handler,
 		ConnContext: func(ctx context.Context, _ net.Conn) context.Context {
@@ -125,6 +136,9 @@ func Run(ctx context.Context, o Options) error {
 		fmt.Fprintf(os.Stderr, "dennet: serving on %s (KUBECONFIG=%s)\n", url, filepath.Join(o.StateDir, "kubeconfig"))
 	}
 
+	// ponytail: RunWithContext never returns without its own SecureServing
+	// (its listener-stopped channel is nil), so nothing waits for it; its
+	// etcd clients log reconnect warnings while dennet exits.
 	go func() { errc <- prepared.RunWithContext(ctx) }()
 
 	select {
@@ -134,8 +148,32 @@ func Run(ctx context.Context, o Options) error {
 	for _, s := range servers {
 		s.Close()
 	}
-	os.Remove(o.Socket)
 	return err
+}
+
+// startEtcd runs etcd in this process with its data in <stateDir>/etcd,
+// reachable only over a Unix socket in stateDir (mode 0700).
+func startEtcd(stateDir string) (*embed.Etcd, string, error) {
+	cfg := embed.NewConfig()
+	cfg.Dir = filepath.Join(stateDir, "etcd")
+	cfg.LogLevel = "error"
+	client, _ := url.Parse("unix://" + filepath.Join(stateDir, "etcd.sock"))
+	cfg.ListenClientUrls, cfg.AdvertiseClientUrls = []url.URL{*client}, []url.URL{*client}
+	// A single member needs no peers: listen for none. The advertised peer
+	// URL only names this member in the cluster config.
+	cfg.ListenPeerUrls = nil
+	cfg.InitialCluster = cfg.InitialClusterFromName(cfg.Name)
+	e, err := embed.StartEtcd(cfg)
+	if err != nil {
+		return nil, "", fmt.Errorf("etcd: %w", err)
+	}
+	select {
+	case <-e.Server.ReadyNotify():
+		return e, client.String(), nil
+	case <-time.After(time.Minute):
+		e.Close()
+		return nil, "", errors.New("etcd did not become ready")
+	}
 }
 
 func serve(err error) error {
@@ -145,11 +183,11 @@ func serve(err error) error {
 	return err
 }
 
-func newAPIServer(token, socket, manifestsDir string) (*genericapiserver.GenericAPIServer, error) {
-	// ponytail: everything, Leases included, is in memory and lost on restart.
-	backend := memstore.New()
+func newAPIServer(token, socket, etcdURL string) (*genericapiserver.GenericAPIServer, error) {
 	optsFor := func(gv schema.GroupVersion) generic.RESTOptionsGetter {
-		return restOptions{gv: gv, backend: backend}
+		cfg := storagebackend.NewDefaultConfig("/registry", Codecs.LegacyCodec(gv))
+		cfg.Transport.ServerList = []string{etcdURL}
+		return restOptions{cfg}
 	}
 	ns, err := registry.NewNamespace(Scheme, optsFor(corev1.SchemeGroupVersion))
 	if err != nil {
@@ -181,13 +219,6 @@ func newAPIServer(token, socket, manifestsDir string) (*genericapiserver.Generic
 	if err != nil {
 		return nil, err
 	}
-	if manifestsDir != "" {
-		// Runs once the API is up; /readyz waits for the first sync.
-		srv.AddPostStartHookOrDie("manifests", func(hc genericapiserver.PostStartHookContext) error {
-			return manifests.Start(hc, manifestsDir, hc.LoopbackClientConfig)
-		})
-	}
-
 	den, denStatus, err := registry.NewDen(Scheme, optsFor(denv1.SchemeGroupVersion))
 	if err != nil {
 		return nil, err
@@ -228,18 +259,14 @@ func newAPIServer(token, socket, manifestsDir string) (*genericapiserver.Generic
 	return srv, nil
 }
 
-type restOptions struct {
-	gv      schema.GroupVersion
-	backend *memstore.Backend
-}
+type restOptions struct{ cfg *storagebackend.Config }
 
+// ponytail: no watch cache, every watch is its own etcd watch; add
+// genericregistry.StorageWithCacher if watchers ever number in the hundreds.
 func (r restOptions) GetRESTOptions(gr schema.GroupResource, _ runtime.Object) (generic.RESTOptions, error) {
 	return generic.RESTOptions{
-		StorageConfig: &storagebackend.ConfigForResource{
-			GroupResource: gr,
-			Config:        storagebackend.Config{Codec: Codecs.LegacyCodec(r.gv)},
-		},
-		Decorator:      r.backend.Decorator(),
+		StorageConfig:  r.cfg.ForResource(gr),
+		Decorator:      generic.UndecoratedStorage,
 		ResourcePrefix: "/" + gr.Group + "/" + gr.Resource,
 	}, nil
 }

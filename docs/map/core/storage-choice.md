@@ -1,19 +1,22 @@
 +++
 title = "Storage choice"
-summary = "Rebuild objects from running dens, or persist them (SQLite via kine, or a file store)"
+summary = "Persist objects in etcd embedded in dennet"
 kind = "code"
 intent = "aspiration"
-research = "deferred"
-status = "todo"
+research = "done"
+status = "done"
 
 [[needs]]
 on = "/core/storage"
-why = "It replaces or wraps the in-memory store"
-
-[[needs]]
-fuzzy = "how den tells a dennet restart from a deletion"
-why = "Likely: a fresh GET returning 404 means re-create from the last spec; DELETED or a deletionTimestamp means stop"
+why = "The choice is carried out there"
 +++
 
-Deliberately undecided in the PRD: ephemeral, rebuilt from dens, or
-persistent.
+The PRD left this open: ephemeral, rebuilt from dens, or persistent.
+Persistent won, with embedded etcd: it is the backend k8s.io/apiserver
+already ships, so there is no storage code of our own. The in-memory store
+and the manifests directory that refilled it after a restart are gone.
+
+Considered and dropped: kine with SQLite, and a store that mirrors objects
+to files that can be edited both on disk and through the API. A read and
+write view of objects as files may come back later as a FUSE mount that
+talks to the API (with macFUSE on macOS).
