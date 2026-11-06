@@ -161,38 +161,38 @@ type SpaceList struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// View is one tab inside a Space.
-type View struct {
+// Surface is one tab inside a Space.
+type Surface struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec ViewSpec `json:"spec,omitempty"`
+	Spec SurfaceSpec `json:"spec,omitempty"`
 }
 
-type ViewSpec struct {
+type SurfaceSpec struct {
 	// Space is the name of the Space this tab belongs to, in the same namespace.
 	Space string `json:"space"`
 	// Order is the position among the space's tabs, lowest first.
 	Order int32  `json:"order,omitempty"`
 	Title string `json:"title,omitempty"`
 	// Kind says what the tab shows, and which block below is set.
-	Kind     ViewKind      `json:"kind"`
-	Terminal *TerminalView `json:"terminal,omitempty"`
+	Kind     SurfaceKind      `json:"kind"`
+	Terminal *TerminalSurface `json:"terminal,omitempty"`
 }
 
-type ViewKind string
+type SurfaceKind string
 
-const ViewTerminal ViewKind = "terminal"
+const SurfaceTerminal SurfaceKind = "terminal"
 
-type TerminalView struct {
+type TerminalSurface struct {
 	// Den is the name of the Den to attach to, in the same namespace.
 	Den string `json:"den"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type ViewList struct {
+type SurfaceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []View `json:"items"`
+	Items           []Surface `json:"items"`
 }

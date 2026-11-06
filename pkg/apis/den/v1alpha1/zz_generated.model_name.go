@@ -68,21 +68,21 @@ func (in SpaceSpec) OpenAPIModelName() string {
 }
 
 // OpenAPIModelName returns the OpenAPI model name for this type.
-func (in TerminalView) OpenAPIModelName() string {
-	return "pub.mkm.den.v1alpha1.TerminalView"
+func (in Surface) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.Surface"
 }
 
 // OpenAPIModelName returns the OpenAPI model name for this type.
-func (in View) OpenAPIModelName() string {
-	return "pub.mkm.den.v1alpha1.View"
+func (in SurfaceList) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.SurfaceList"
 }
 
 // OpenAPIModelName returns the OpenAPI model name for this type.
-func (in ViewList) OpenAPIModelName() string {
-	return "pub.mkm.den.v1alpha1.ViewList"
+func (in SurfaceSpec) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.SurfaceSpec"
 }
 
 // OpenAPIModelName returns the OpenAPI model name for this type.
-func (in ViewSpec) OpenAPIModelName() string {
-	return "pub.mkm.den.v1alpha1.ViewSpec"
+func (in TerminalSurface) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.TerminalSurface"
 }
