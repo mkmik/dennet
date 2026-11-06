@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/genericiooptions"
+	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/client-go/rest"
 	"k8s.io/component-base/cli"
 	kubectl "k8s.io/kubectl/pkg/cmd"
@@ -175,12 +176,16 @@ func main() {
 				run(cmd, args)
 				return
 			}
-			ns, _, err := flags.ToRawKubeConfigLoader().Namespace()
+			ns, enforce, err := flags.ToRawKubeConfigLoader().Namespace()
 			cmdutil.CheckErr(err)
 			all, _ := cmd.Flags().GetBool("all-namespaces")
 			sel, _ := cmd.Flags().GetString("selector")
+			files, _ := cmd.Flags().GetStringSlice("filename")
+			recursive, _ := cmd.Flags().GetBool("recursive")
+			kustomize, _ := cmd.Flags().GetString("kustomize")
 			infos, err := cmdutil.NewFactory(flags).NewBuilder().Unstructured().
 				NamespaceParam(ns).DefaultNamespace().AllNamespaces(all).
+				FilenameParam(enforce, &resource.FilenameOptions{Filenames: files, Recursive: recursive, Kustomize: kustomize}).
 				LabelSelectorParam(sel).ResourceTypeOrNameArgs(true, args...).
 				ContinueOnError().Latest().Flatten().Do().Infos()
 			for _, i := range infos {
