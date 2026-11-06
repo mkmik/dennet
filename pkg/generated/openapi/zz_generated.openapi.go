@@ -332,6 +332,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		v1alpha1.DenStatus{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_DenStatus(ref),
 		v1alpha1.EnvVar{}.OpenAPIModelName():                           schema_pkg_apis_den_v1alpha1_EnvVar(ref),
 		v1alpha1.HistorySpec{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_HistorySpec(ref),
+		v1alpha1.Host{}.OpenAPIModelName():                             schema_pkg_apis_den_v1alpha1_Host(ref),
+		v1alpha1.HostList{}.OpenAPIModelName():                         schema_pkg_apis_den_v1alpha1_HostList(ref),
+		v1alpha1.HostSpec{}.OpenAPIModelName():                         schema_pkg_apis_den_v1alpha1_HostSpec(ref),
 		v1alpha1.ReportSpec{}.OpenAPIModelName():                       schema_pkg_apis_den_v1alpha1_ReportSpec(ref),
 		v1alpha1.Size{}.OpenAPIModelName():                             schema_pkg_apis_den_v1alpha1_Size(ref),
 		v1alpha1.Space{}.OpenAPIModelName():                            schema_pkg_apis_den_v1alpha1_Space(ref),
@@ -17855,6 +17858,122 @@ func schema_pkg_apis_den_v1alpha1_HistorySpec(ref common.ReferenceCallback) comm
 		},
 		Dependencies: []string{
 			metav1.Duration{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_Host(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Host is another machine running dennet. Its objects show up here in the namespace with the Host's name; there they live in its default namespace. dennet reaches it with ssh, running dennet server dial-stdio there.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(metav1.ObjectMeta{}.OpenAPIModelName()),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(v1alpha1.HostSpec{}.OpenAPIModelName()),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			metav1.ObjectMeta{}.OpenAPIModelName(), v1alpha1.HostSpec{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_HostList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(metav1.ListMeta{}.OpenAPIModelName()),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref(v1alpha1.Host{}.OpenAPIModelName()),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			metav1.ListMeta{}.OpenAPIModelName(), v1alpha1.Host{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_HostSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ssh": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SSH is the ssh destination: [user@]host, a Host alias from ~/.ssh/config, or ssh://[user@]host[:port].",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"dennet": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Dennet is the command that runs dennet there, read by the remote shell, e.g. \"~/go/bin/dennet --socket=/run/x.sock\". Defaults to dennet.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"ssh"},
+			},
+		},
 	}
 }
 

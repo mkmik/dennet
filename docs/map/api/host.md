@@ -1,14 +1,26 @@
 +++
 title = "Host"
-summary = "Cluster-scoped: a machine that can run dens, how to reach it, capacity, last seen"
+summary = "Cluster-scoped: another machine running dennet, reached over ssh; named after its namespace"
 kind = "code"
-intent = "aspiration"
-research = "deferred"
+intent = "induced"
+research = "done"
+refs = ["pkg/apis/den/v1alpha1/types.go", "internal/registry/host.go"]
+
+[[feature]]
+id = "ssh"
+title = "spec.ssh, the ssh destination, and spec.dennet, the remote dennet command"
+status = "done"
+
+[[feature]]
+id = "status"
+title = "Capacity and last seen, from the PRD"
+status = "todo"
 
 [[needs]]
 on = "/core/apiserver"
 why = "Served from the embedded API server"
 +++
 
-Proposed in the PRD. Open question: is it needed in v1, or only once there
-is more than one host? `spec.hostName` already names one.
+Proposed in the PRD. A Host named `default` is refused: that is this
+host's own namespace. `spec.hostName` on a Den is the option B idea and
+is unrelated so far.

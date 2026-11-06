@@ -23,7 +23,7 @@ on = "/proxy/subresources#attach"
 why = "Its terminal is an attached den"
 
 [[needs]]
-fuzzy = "SSH stdio forwarding of a remote host's dennet socket"
+on = "/hosts/federation#ssh"
 why = "Remote reach in v1, so dennet needs no network auth at first"
 +++
 

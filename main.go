@@ -103,8 +103,26 @@ func main() {
 		},
 	}
 	run.Flags().StringVar(&o.TCPAddr, "tcp", "", "also serve TLS on this address (e.g. 127.0.0.1:0), for stock kubectl and remote clients")
+	dial := &cobra.Command{
+		Use:   "dial-stdio",
+		Short: "Connect stdin and stdout to the dennet socket",
+		Long:  "Connect stdin and stdout to the dennet socket. Another dennet runs this over ssh to reach the objects of a Host.",
+		Args:  cobra.NoArgs,
+		RunE: func(*cobra.Command, []string) error {
+			c, err := net.Dial("unix", socket())
+			if err != nil {
+				return err
+			}
+			go func() {
+				io.Copy(c, os.Stdin)
+				c.(*net.UnixConn).CloseWrite()
+			}()
+			_, err = io.Copy(os.Stdout, c)
+			return err
+		},
+	}
 	srv := &cobra.Command{Use: "server", Short: "Manage the dennet API server"}
-	srv.AddCommand(run)
+	srv.AddCommand(run, dial)
 	root.AddCommand(srv)
 
 	var color bool

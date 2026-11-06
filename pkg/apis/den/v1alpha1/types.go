@@ -196,3 +196,34 @@ type SurfaceList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Surface `json:"items"`
 }
+
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// Host is another machine running dennet. Its objects show up here in the
+// namespace with the Host's name; there they live in its default namespace.
+// dennet reaches it with ssh, running dennet server dial-stdio there.
+type Host struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec HostSpec `json:"spec,omitempty"`
+}
+
+type HostSpec struct {
+	// SSH is the ssh destination: [user@]host, a Host alias from
+	// ~/.ssh/config, or ssh://[user@]host[:port].
+	SSH string `json:"ssh"`
+	// Dennet is the command that runs dennet there, read by the remote
+	// shell, e.g. "~/go/bin/dennet --socket=/run/x.sock". Defaults to dennet.
+	Dennet string `json:"dennet,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type HostList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Host `json:"items"`
+}

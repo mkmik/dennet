@@ -14,7 +14,7 @@ var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1alpha
 // separate internal types, under the internal version too.
 func AddToScheme(s *runtime.Scheme) error {
 	for _, gv := range []schema.GroupVersion{SchemeGroupVersion, {Group: GroupName, Version: runtime.APIVersionInternal}} {
-		s.AddKnownTypes(gv, &Den{}, &DenList{}, &Space{}, &SpaceList{}, &Surface{}, &SurfaceList{})
+		s.AddKnownTypes(gv, &Den{}, &DenList{}, &Space{}, &SpaceList{}, &Surface{}, &SurfaceList{}, &Host{}, &HostList{})
 	}
 	metav1.AddToGroupVersion(s, SchemeGroupVersion)
 	s.AddTypeDefaultingFunc(&Den{}, func(o any) { SetDefaults(o.(*Den)) })

@@ -118,11 +118,16 @@ func Run(ctx context.Context, o Options) error {
 	errc := make(chan error, 4)
 	go func() { errc <- <-etcd.Err() }()
 	unixSrv := &http.Server{
-		Handler: handler,
+		Handler:   handler,
+		Protocols: new(http.Protocols),
 		ConnContext: func(ctx context.Context, _ net.Conn) context.Context {
 			return context.WithValue(ctx, localConnKey{}, true)
 		},
 	}
+	// HTTP/2 without TLS lets one ssh connection carry all of a remote
+	// dennet's requests (see remote.go).
+	unixSrv.Protocols.SetHTTP1(true)
+	unixSrv.Protocols.SetUnencryptedHTTP2(true)
 	go func() { errc <- serve(unixSrv.Serve(unixLn)) }()
 	fmt.Fprintf(os.Stderr, "dennet: serving on unix://%s\n", o.Socket)
 
@@ -197,7 +202,16 @@ func newAPIServer(token, socket, etcdURL string) (*genericapiserver.GenericAPISe
 		return nil, err
 	}
 
+	hosts, err := registry.NewHost(Scheme, optsFor(denv1.SchemeGroupVersion))
+	if err != nil {
+		return nil, err
+	}
+
 	cfg := genericapiserver.NewConfig(Codecs)
+	// Inside authentication, which runs before any request reaches a Host.
+	cfg.BuildHandlerChainFunc = func(h http.Handler, c *genericapiserver.Config) http.Handler {
+		return genericapiserver.DefaultBuildHandlerChain(&remote{next: h, hosts: hosts}, c)
+	}
 	cfg.AdmissionControl = ns.AutoCreate()
 	cfg.EffectiveVersion = basecompatibility.NewEffectiveVersionFromString(baseversion.DefaultKubeBinaryVersion, "", "")
 	cfg.ExternalAddress = "localhost:0" // only shown in discovery
@@ -243,6 +257,7 @@ func newAPIServer(token, socket, etcdURL string) (*genericapiserver.GenericAPISe
 		"dens/log":    registry.NewDenLog(den),
 		"spaces":      space,
 		"surfaces":    surface,
+		"hosts":       hosts,
 	}
 	leaseGroup := genericapiserver.NewDefaultAPIGroupInfo(coordinationv1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 	leaseGroup.VersionedResourcesStorageMap[coordinationv1.SchemeGroupVersion.Version] = map[string]rest.Storage{
