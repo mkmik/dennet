@@ -28,16 +28,12 @@ import (
 )
 
 func main() {
-	// XDG base directories: token, certificate and kubeconfig are state;
+	// XDG base directories: token, certificate, kubeconfig and etcd data are state;
 	// the socket is runtime, next to den's $XDG_RUNTIME_DIR/den/ sockets.
 	home, _ := os.UserHomeDir()
 	stateDir := filepath.Join(home, ".local", "state", "dennet")
 	if d := os.Getenv("XDG_STATE_HOME"); d != "" {
 		stateDir = filepath.Join(d, "dennet")
-	}
-	configDir := filepath.Join(home, ".config")
-	if d := os.Getenv("XDG_CONFIG_HOME"); d != "" {
-		configDir = d
 	}
 	var o server.Options
 	socket := func() string {
@@ -92,7 +88,7 @@ func main() {
 		io.WriteString(term.NewResponsiveWriter(out), strings.Replace(b.String(), "Subcommands provided by plugins:\n\n", "", 1))
 	})
 	root.Use, root.Short, root.Long = "dennet", "dennet serves and controls den sessions", ""
-	root.PersistentFlags().StringVar(&o.StateDir, "state-dir", stateDir, "directory for the token, serving certificate and kubeconfig")
+	root.PersistentFlags().StringVar(&o.StateDir, "state-dir", stateDir, "directory for the token, serving certificate, kubeconfig and etcd data")
 	root.PersistentFlags().StringVar(&o.Socket, "socket", "", "dennet Unix socket (default $XDG_RUNTIME_DIR/dennet/dennet.sock, or <state-dir>/dennet.sock without it)")
 
 	run := &cobra.Command{
@@ -107,7 +103,6 @@ func main() {
 		},
 	}
 	run.Flags().StringVar(&o.TCPAddr, "tcp", "", "also serve TLS on this address (e.g. 127.0.0.1:0), for stock kubectl and remote clients")
-	run.Flags().StringVar(&o.Manifests, "manifests", filepath.Join(configDir, "dennet", "manifests"), "apply the YAML and JSON files in this directory as they change (\"\" to turn off)")
 	srv := &cobra.Command{Use: "server", Short: "Manage the dennet API server"}
 	srv.AddCommand(run)
 	root.AddCommand(srv)

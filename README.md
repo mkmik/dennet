@@ -49,32 +49,17 @@ The token, certificate and kubeconfig live in `$XDG_STATE_HOME/dennet`
 (default `~/.local/state/dennet`). Use `--state-dir` and `--socket` to change
 where they go; the client commands take the same flags.
 
-Everything is kept in memory. When dennet restarts, all objects are gone. A
-watch that resumes from an old `resourceVersion` gets `410 Gone`.
+## Storage
 
-## Manifests directory
+dennet runs etcd inside its own process. Objects are kept in
+`<state-dir>/etcd`, so they are still there after dennet restarts. To start
+from nothing, stop dennet and delete that directory.
 
-`dennet server run` applies every `*.yaml`, `*.yml` and `*.json` file in
-`$XDG_CONFIG_HOME/dennet/manifests` (default `~/.config/dennet/manifests`),
-without a `kubectl apply`. Change the directory with `--manifests`, or turn
-this off with `--manifests=""`.
+This etcd listens only on the Unix socket `<state-dir>/etcd.sock`. The state
+dir has mode 0700, so only your user can reach it.
 
-- dennet applies a file when it starts and whenever the file changes. It uses
-  server-side apply with the field manager `dennet-manifests`.
-- When you remove an object from a file, or delete the file, dennet deletes
-  that object.
-- A file that hasn't changed is not applied again. If you edit one of its
-  objects with kubectl, the edit stays until you next change the file.
-- If a file has an error, dennet logs it and deletes nothing from that file.
-- dennet only reads the directory itself, not its subdirectories. Files whose
-  names start with `.` (editor swap files) are skipped.
-
-dennet finds out about changes from the OS (inotify on Linux, kqueue on
-macOS) through [fsnotify](https://github.com/fsnotify/fsnotify). It does not
-poll, and it reads the directory only when something in it changes.
-
-Objects are kept in memory, so these files are how objects come back after
-a restart.
+Old versions are compacted every 5 minutes. A watch that resumes from a
+`resourceVersion` older than that gets `410 Gone` and has to list again.
 
 ## Develop
 

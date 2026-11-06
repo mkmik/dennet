@@ -10,16 +10,20 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
+
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 // TestDenProtocol drives dennet over its Unix socket with plain HTTP, the way
 // den does: create, single-object watch, status PATCH with a uid
 // precondition, stale watches and deletion.
 func TestDenProtocol(t *testing.T) {
-	c, dir := start(t, "")
+	c, dir := start(t)
 	const base = "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/p/dens"
 	do := func(method, url, ctype, body string) (int, map[string]any) {
 		t.Helper()
@@ -86,8 +90,11 @@ func TestDenProtocol(t *testing.T) {
 		t.Fatalf("status patch with stale uid: want 409, got %d %v", code, m)
 	}
 
-	if e := next(t, watch(t, c, base+"?watch=true&resourceVersion=999999")); e.Type != "ERROR" || e.Object["code"] != 410.0 {
-		t.Fatalf("watch from a resourceVersion this dennet never had: want 410, got %v", e)
+	// Once etcd compacts past a resourceVersion, watching from it is 410.
+	_, cur := do("GET", base+"/build", "", "")
+	compact(t, dir, cur["metadata"].(map[string]any)["resourceVersion"].(string))
+	if e := next(t, watch(t, c, base+"?watch=true&resourceVersion="+rv)); e.Type != "ERROR" || e.Object["code"] != 410.0 {
+		t.Fatalf("watch from a compacted resourceVersion: want 410, got %v", e)
 	}
 
 	if code, m := do("DELETE", base+"/build", "", ""); code != 200 {
@@ -119,7 +126,7 @@ func TestDenProtocol(t *testing.T) {
 // TestSpacesAndSurfaces checks that Spaces and Surfaces are served and that bad
 // specs are rejected.
 func TestSpacesAndSurfaces(t *testing.T) {
-	c, _ := start(t, "")
+	c, _ := start(t)
 	const base = "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/default/"
 	post := func(res, body string) int {
 		t.Helper()
@@ -152,49 +159,38 @@ func TestSpacesAndSurfaces(t *testing.T) {
 	}
 }
 
-// TestManifests checks that files in the manifests dir are applied at start
-// and as they change, and that their objects go when they are dropped.
-func TestManifests(t *testing.T) {
-	mdir := t.TempDir()
-	write := func(name, body string) {
-		t.Helper()
-		if err := os.WriteFile(filepath.Join(mdir, name), []byte(body), 0o600); err != nil {
-			t.Fatal(err)
-		}
+// TestRestart checks that objects outlive a restart on the same state dir.
+func TestRestart(t *testing.T) {
+	dir := tempDir(t)
+	c, stop := run(t, dir)
+	const url = "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/default/spaces"
+	resp, err := c.Post(url, "application/json", strings.NewReader(`{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"kept"}}`))
+	if err != nil {
+		t.Fatal(err)
 	}
-	const den = "apiVersion: den.mkm.pub/v1alpha1\nkind: Den\nmetadata: {name: d, namespace: m}\nspec: {command: [sh]}\n"
-	const lease = "apiVersion: coordination.k8s.io/v1\nkind: Lease\nmetadata: {name: l}\n"
-	write("a.yaml", den+"---\n"+lease)
-	write(".a.yaml.swp", "not yaml")
+	resp.Body.Close()
+	if resp.StatusCode != 201 {
+		t.Fatalf("create: %d", resp.StatusCode)
+	}
+	stop()
 
-	c, _ := start(t, mdir)
-	denURL := "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/m/dens/d"
-	leaseURL := "http://dennet/apis/coordination.k8s.io/v1/namespaces/default/leases/l"
-	nsURL := "http://dennet/api/v1/namespaces/n"
-	// Ready means the first sync is done, so no waiting here.
-	for _, u := range []string{denURL, leaseURL} {
-		if code := get(t, c, u); code != 200 {
-			t.Fatalf("GET %s after start: %d", u, code)
-		}
+	c, _ = run(t, dir)
+	if code := get(t, c, url+"/kept"); code != 200 {
+		t.Fatalf("GET after restart: %d", code)
 	}
-	eventually := func(url string, want int) {
-		t.Helper()
-		for i := 0; get(t, c, url) != want; i++ {
-			if i == 100 {
-				t.Fatalf("GET %s: want %d", url, want)
-			}
-			time.Sleep(50 * time.Millisecond)
-		}
-	}
+}
 
-	write("a.yaml", lease) // drops the Den
-	eventually(denURL, 404)
-	write("b.json", `{"apiVersion":"v1","kind":"Namespace","metadata":{"name":"n"}}`)
-	eventually(nsURL, 200)
-	os.Remove(filepath.Join(mdir, "a.yaml"))
-	eventually(leaseURL, 404)
-	if code := get(t, c, nsURL); code != 200 {
-		t.Fatalf("namespace from b.json: %d", code)
+// compact compacts dennet's etcd up to resourceVersion rv.
+func compact(t *testing.T, dir, rv string) {
+	t.Helper()
+	cli, err := clientv3.New(clientv3.Config{Endpoints: []string{"unix://" + filepath.Join(dir, "etcd.sock")}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cli.Close()
+	n, _ := strconv.ParseInt(rv, 10, 64)
+	if _, err := cli.Compact(context.Background(), n); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -210,33 +206,50 @@ func get(t *testing.T, c *http.Client, url string) int {
 
 // start runs dennet with its state in a temporary dir until the test ends,
 // and returns a client for its socket once it is ready.
-func start(t *testing.T, manifests string) (*http.Client, string) {
+func start(t *testing.T) (*http.Client, string) {
+	dir := tempDir(t)
+	c, _ := run(t, dir)
+	return c, dir
+}
+
+func tempDir(t *testing.T) string {
 	t.Helper()
 	dir, err := os.MkdirTemp("", "dn") // short: Unix socket paths are limited to ~104 bytes
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { os.RemoveAll(dir) })
-	sock := filepath.Join(dir, "s")
+	return dir
+}
 
+// run runs dennet on dir until stop is called or the test ends.
+func run(t *testing.T, dir string) (c *http.Client, stop func()) {
+	t.Helper()
+	sock := filepath.Join(dir, "s")
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
-	go func() { done <- Run(ctx, Options{StateDir: dir, Socket: sock, Manifests: manifests}) }()
-	t.Cleanup(func() { cancel(); <-done })
+	go func() { done <- Run(ctx, Options{StateDir: dir, Socket: sock}) }()
+	stop = sync.OnceFunc(func() {
+		cancel()
+		if err := <-done; err != nil {
+			t.Errorf("Run: %v", err)
+		}
+	})
+	t.Cleanup(stop)
 
-	c := &http.Client{Transport: &http.Transport{DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+	c = &http.Client{Transport: &http.Transport{DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 		return (&net.Dialer{}).DialContext(ctx, "unix", sock)
 	}}}
 	for i := 0; ; i++ {
 		if code, _ := doReady(c); code == 200 {
 			break
 		}
-		if i == 100 {
+		if i == 200 {
 			t.Fatal("dennet did not become ready")
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	return c, dir
+	return c, stop
 }
 
 func doReady(c *http.Client) (int, error) {

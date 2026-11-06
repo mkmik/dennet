@@ -1,11 +1,11 @@
 +++
 title = "Storage"
-summary = "In-memory storage.Interface, with etcd-like global resource versions"
-aka = ["memstore"]
+summary = "etcd embedded in the dennet process, persisted in the state dir"
+aka = ["etcd", "embedded etcd"]
 kind = "code"
 intent = "induced"
 research = "done"
-refs = ["internal/memstore/memstore.go"]
+refs = ["internal/server/server.go"]
 
 [[feature]]
 id = "crud"
@@ -15,17 +15,27 @@ milestone = "m1"
 
 [[feature]]
 id = "watch"
-title = "Watch, with 410 Gone past the event history"
+title = "Watch, with 410 Gone once etcd compacts past the resourceVersion"
 status = "done"
 milestone = "m1"
+
+[[feature]]
+id = "persist"
+title = "Objects survive a dennet restart"
+status = "done"
 
 [[feature]]
 id = "paging"
 title = "Paging on list requests"
 status = "todo"
 note = "Lists always come back whole"
+
+[[needs]]
+on = "/deps/k8s"
+why = "k8s.io/apiserver's own etcd3 storage, the one kube-apiserver uses"
 +++
 
-Built behind the standard storage interface so the choice can change
-without touching the types or controllers. On restart all objects are
-gone; dens keep running and must re-register.
+etcd runs inside dennet, with its data in `<state-dir>/etcd`. It listens on
+the Unix socket `<state-dir>/etcd.sock` and on no peer port. The API server
+uses its stock etcd3 storage, without a watch cache, and compacts every 5
+minutes.

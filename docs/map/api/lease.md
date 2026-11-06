@@ -13,5 +13,5 @@ on = "/core/apiserver"
 why = "Served from the embedded API server"
 +++
 
-Leases stay in memory whatever storage wins: they're rewritten every few
-seconds and useless after a restart.
+Leases are stored in etcd like everything else. They're rewritten every few
+seconds, which etcd handles fine, and after a restart they've simply expired.

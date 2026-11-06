@@ -8,13 +8,13 @@ refs = ["internal/server/server_test.go"]
 
 [[feature]]
 id = "protocol"
-title = "Plain HTTP the way den talks: create, single-object watch, status PATCH, 409, 410"
+title = "Plain HTTP the way den talks: create, single-object watch, status PATCH, 409, 410 after compaction"
 status = "done"
 milestone = "m1"
 
 [[feature]]
-id = "manifests"
-title = "The manifests directory"
+id = "restart"
+title = "Objects outlive a restart on the same state dir"
 status = "done"
 
 [[feature]]
