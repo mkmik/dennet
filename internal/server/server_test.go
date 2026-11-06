@@ -159,6 +159,21 @@ func TestSpacesAndSurfaces(t *testing.T) {
 	if code := get(t, c, base+"surfaces/m-claude"); code != 200 {
 		t.Fatalf("GET surface: %d", code)
 	}
+	req, _ := http.NewRequest("GET", base+"spaces/kubecfg", nil)
+	req.Header.Set("Accept", "application/json;as=Table;v=v1;g=meta.k8s.io")
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var tbl struct {
+		ColumnDefinitions []struct{ Name string }
+		Rows              []struct{ Cells []any }
+	}
+	json.NewDecoder(resp.Body).Decode(&tbl)
+	if len(tbl.Rows) != 1 || len(tbl.ColumnDefinitions) < 2 || tbl.ColumnDefinitions[1].Name != "Title" || tbl.Rows[0].Cells[1] != "kubecfg" {
+		t.Fatalf("space table should have a Title column: %+v", tbl)
+	}
 }
 
 // TestRestart checks that objects outlive a restart on the same state dir.
