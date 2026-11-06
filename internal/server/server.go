@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"go.etcd.io/etcd/server/v3/embed"
+	"go.uber.org/zap"
 	coordinationv1 "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,12 +100,12 @@ func Run(ctx context.Context, o Options) error {
 		return err
 	}
 	defer os.Remove(o.Socket)
-	etcd, etcdURL, err := startEtcd(o.StateDir)
+	etcd, etcdURL, closeEtcd, err := startEtcd(o.StateDir)
 	if err != nil {
 		unixLn.Close()
 		return err
 	}
-	defer etcd.Close()
+	defer closeEtcd()
 	fmt.Fprintf(os.Stderr, "dennet: storing objects in %s (stop dennet and delete it to start from nothing)\n", etcd.Config().Dir)
 
 	srv, err := newAPIServer(token, o.Socket, etcdURL)
@@ -112,6 +113,9 @@ func Run(ctx context.Context, o Options) error {
 		unixLn.Close()
 		return err
 	}
+	// Runs before etcd.Close (defers are LIFO): close the API server's etcd
+	// clients first, or they log reconnect errors while dennet exits.
+	defer srv.Destroy()
 	prepared := srv.PrepareRun()
 	handler := prepared.Handler
 
@@ -142,8 +146,8 @@ func Run(ctx context.Context, o Options) error {
 	}
 
 	// ponytail: RunWithContext never returns without its own SecureServing
-	// (its listener-stopped channel is nil), so nothing waits for it; its
-	// etcd clients log reconnect warnings while dennet exits.
+	// (its listener-stopped channel is nil), so nothing waits for it and its
+	// deferred Destroy never runs; Run calls Destroy itself.
 	go func() { errc <- prepared.RunWithContext(ctx) }()
 
 	select {
@@ -157,27 +161,37 @@ func Run(ctx context.Context, o Options) error {
 }
 
 // startEtcd runs etcd in this process with its data in <stateDir>/etcd,
-// reachable only over a Unix socket in stateDir (mode 0700).
-func startEtcd(stateDir string) (*embed.Etcd, string, error) {
+// reachable only over a Unix socket in stateDir (mode 0700). close stops
+// it without the errors etcd logs about its own listeners closing.
+func startEtcd(stateDir string) (e *embed.Etcd, clientURL string, close func(), err error) {
 	cfg := embed.NewConfig()
 	cfg.Dir = filepath.Join(stateDir, "etcd")
-	cfg.LogLevel = "error"
+	logCfg := zap.NewProductionConfig()
+	logCfg.Level = zap.NewAtomicLevelAt(zap.ErrorLevel)
+	lg, err := logCfg.Build()
+	if err != nil {
+		return nil, "", nil, err
+	}
+	cfg.ZapLoggerBuilder = embed.NewZapLoggerBuilder(lg)
 	client, _ := url.Parse("unix://" + filepath.Join(stateDir, "etcd.sock"))
 	cfg.ListenClientUrls, cfg.AdvertiseClientUrls = []url.URL{*client}, []url.URL{*client}
 	// A single member needs no peers: listen for none. The advertised peer
 	// URL only names this member in the cluster config.
 	cfg.ListenPeerUrls = nil
 	cfg.InitialCluster = cfg.InitialClusterFromName(cfg.Name)
-	e, err := embed.StartEtcd(cfg)
-	if err != nil {
-		return nil, "", fmt.Errorf("etcd: %w", err)
+	if e, err = embed.StartEtcd(cfg); err != nil {
+		return nil, "", nil, fmt.Errorf("etcd: %w", err)
+	}
+	close = func() {
+		logCfg.Level.SetLevel(zap.FatalLevel)
+		e.Close()
 	}
 	select {
 	case <-e.Server.ReadyNotify():
-		return e, client.String(), nil
+		return e, client.String(), close, nil
 	case <-time.After(time.Minute):
-		e.Close()
-		return nil, "", errors.New("etcd did not become ready")
+		close()
+		return nil, "", nil, errors.New("etcd did not become ready")
 	}
 }
 
