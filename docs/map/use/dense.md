@@ -15,8 +15,8 @@ on = "/api/space"
 why = "Draws the sidebar tree from Spaces"
 
 [[needs]]
-on = "/api/view"
-why = "Draws each space's tabs from Views"
+on = "/api/surface"
+why = "Draws each space's tabs from Surfaces"
 
 [[needs]]
 on = "/proxy/subresources#attach"

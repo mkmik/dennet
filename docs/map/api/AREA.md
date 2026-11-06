@@ -1,7 +1,7 @@
 +++
 title = "API"
 band = "api"
-summary = "den.mkm.pub/v1alpha1 kinds (Den, Space, View), Lease, and Namespace"
+summary = "den.mkm.pub/v1alpha1 kinds (Den, Space, Surface), Lease, and Namespace"
 +++
 
 Native Go types with generated deepcopy, defaulting, validation and

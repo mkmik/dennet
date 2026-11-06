@@ -337,10 +337,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		v1alpha1.Space{}.OpenAPIModelName():                            schema_pkg_apis_den_v1alpha1_Space(ref),
 		v1alpha1.SpaceList{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_SpaceList(ref),
 		v1alpha1.SpaceSpec{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_SpaceSpec(ref),
-		v1alpha1.TerminalView{}.OpenAPIModelName():                     schema_pkg_apis_den_v1alpha1_TerminalView(ref),
-		v1alpha1.View{}.OpenAPIModelName():                             schema_pkg_apis_den_v1alpha1_View(ref),
-		v1alpha1.ViewList{}.OpenAPIModelName():                         schema_pkg_apis_den_v1alpha1_ViewList(ref),
-		v1alpha1.ViewSpec{}.OpenAPIModelName():                         schema_pkg_apis_den_v1alpha1_ViewSpec(ref),
+		v1alpha1.Surface{}.OpenAPIModelName():                          schema_pkg_apis_den_v1alpha1_Surface(ref),
+		v1alpha1.SurfaceList{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_SurfaceList(ref),
+		v1alpha1.SurfaceSpec{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref),
+		v1alpha1.TerminalSurface{}.OpenAPIModelName():                  schema_pkg_apis_den_v1alpha1_TerminalSurface(ref),
 	}
 }
 
@@ -18078,32 +18078,11 @@ func schema_pkg_apis_den_v1alpha1_SpaceSpec(ref common.ReferenceCallback) common
 	}
 }
 
-func schema_pkg_apis_den_v1alpha1_TerminalView(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkg_apis_den_v1alpha1_Surface(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"den": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Den is the name of the Den to attach to, in the same namespace.",
-							Default:     "",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-				Required: []string{"den"},
-			},
-		},
-	}
-}
-
-func schema_pkg_apis_den_v1alpha1_View(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "View is one tab inside a Space.",
+				Description: "Surface is one tab inside a Space.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -18129,18 +18108,18 @@ func schema_pkg_apis_den_v1alpha1_View(ref common.ReferenceCallback) common.Open
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Default: map[string]interface{}{},
-							Ref:     ref(v1alpha1.ViewSpec{}.OpenAPIModelName()),
+							Ref:     ref(v1alpha1.SurfaceSpec{}.OpenAPIModelName()),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			metav1.ObjectMeta{}.OpenAPIModelName(), v1alpha1.ViewSpec{}.OpenAPIModelName()},
+			metav1.ObjectMeta{}.OpenAPIModelName(), v1alpha1.SurfaceSpec{}.OpenAPIModelName()},
 	}
 }
 
-func schema_pkg_apis_den_v1alpha1_ViewList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkg_apis_den_v1alpha1_SurfaceList(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -18172,7 +18151,7 @@ func schema_pkg_apis_den_v1alpha1_ViewList(ref common.ReferenceCallback) common.
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref(v1alpha1.View{}.OpenAPIModelName()),
+										Ref: ref(v1alpha1.Surface{}.OpenAPIModelName()),
 									},
 								},
 							},
@@ -18183,11 +18162,11 @@ func schema_pkg_apis_den_v1alpha1_ViewList(ref common.ReferenceCallback) common.
 			},
 		},
 		Dependencies: []string{
-			metav1.ListMeta{}.OpenAPIModelName(), v1alpha1.View{}.OpenAPIModelName()},
+			metav1.ListMeta{}.OpenAPIModelName(), v1alpha1.Surface{}.OpenAPIModelName()},
 	}
 }
 
-func schema_pkg_apis_den_v1alpha1_ViewSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -18224,7 +18203,7 @@ func schema_pkg_apis_den_v1alpha1_ViewSpec(ref common.ReferenceCallback) common.
 					},
 					"terminal": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref(v1alpha1.TerminalView{}.OpenAPIModelName()),
+							Ref: ref(v1alpha1.TerminalSurface{}.OpenAPIModelName()),
 						},
 					},
 				},
@@ -18232,6 +18211,27 @@ func schema_pkg_apis_den_v1alpha1_ViewSpec(ref common.ReferenceCallback) common.
 			},
 		},
 		Dependencies: []string{
-			v1alpha1.TerminalView{}.OpenAPIModelName()},
+			v1alpha1.TerminalSurface{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_TerminalSurface(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"den": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Den is the name of the Den to attach to, in the same namespace.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"den"},
+			},
+		},
 	}
 }

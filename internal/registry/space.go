@@ -40,13 +40,13 @@ func NewSpace(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*regis
 		})
 }
 
-// NewView returns the storage for views, the tabs inside a Space.
-func NewView(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*registry.Store, error) {
-	return newPlain(typer, opts, denv1.SchemeGroupVersion.WithResource("views").GroupResource(), "view",
-		func() runtime.Object { return &denv1.View{} },
-		func() runtime.Object { return &denv1.ViewList{} },
+// NewSurface returns the storage for surfaces, the tabs inside a Space.
+func NewSurface(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*registry.Store, error) {
+	return newPlain(typer, opts, denv1.SchemeGroupVersion.WithResource("surfaces").GroupResource(), "surface",
+		func() runtime.Object { return &denv1.Surface{} },
+		func() runtime.Object { return &denv1.SurfaceList{} },
 		func(obj runtime.Object) field.ErrorList {
-			v := obj.(*denv1.View)
+			v := obj.(*denv1.Surface)
 			p := field.NewPath("spec")
 			var errs field.ErrorList
 			if v.Spec.Space == "" {
@@ -54,14 +54,14 @@ func NewView(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*regist
 			}
 			errs = append(errs, validRef(p.Child("space"), v.Spec.Space)...)
 			switch v.Spec.Kind {
-			case denv1.ViewTerminal:
+			case denv1.SurfaceTerminal:
 				if v.Spec.Terminal == nil || v.Spec.Terminal.Den == "" {
 					errs = append(errs, field.Required(p.Child("terminal", "den"), "kind is terminal"))
 				} else {
 					errs = append(errs, validRef(p.Child("terminal", "den"), v.Spec.Terminal.Den)...)
 				}
 			default:
-				errs = append(errs, field.NotSupported(p.Child("kind"), v.Spec.Kind, []denv1.ViewKind{denv1.ViewTerminal}))
+				errs = append(errs, field.NotSupported(p.Child("kind"), v.Spec.Kind, []denv1.SurfaceKind{denv1.SurfaceTerminal}))
 			}
 			return errs
 		})
