@@ -29,14 +29,14 @@ milestone = "m1"
 [[feature]]
 id = "spawn"
 title = "Creating a Den starts a den on its spec.hostName"
-status = "todo"
+status = "done"
 milestone = "m3"
 needs = ["/hosts/spawner#spawn"]
 
 [[feature]]
 id = "finalizer"
 title = "Deleting a Den waits for den to report it has stopped"
-status = "todo"
+status = "done"
 milestone = "m3"
 needs = ["/controllers/finalizer"]
 

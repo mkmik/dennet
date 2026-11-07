@@ -64,6 +64,10 @@ type ReportSpec struct {
 	Interval *metav1.Duration `json:"interval,omitempty"`
 }
 
+// DenFinalizer is on every Den: dennet removes it once the den has stopped,
+// so deleting a Den is how to stop its den.
+const DenFinalizer = "den.mkm.pub/den"
+
 type RestartPolicy string
 
 const (

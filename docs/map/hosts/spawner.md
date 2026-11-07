@@ -3,19 +3,22 @@ title = "Local spawner"
 summary = "Option A: forks a den for each Den on this host, and finds them again after a restart"
 kind = "code"
 intent = "induced"
-research = "outline"
+research = "done"
 milestone = "m3"
+refs = ["internal/server/spawn.go"]
 
 [[feature]]
 id = "spawn"
 title = "Start den fully detached (setsid), with --spec and --status URLs at dennet's socket"
-status = "todo"
+status = "done"
+note = "den apply -f <Den URL> --unix-socket <dennet socket>, for each Den without a live Lease"
 needs = ["/deps/den#spec-get", "/deps/den#status"]
 
 [[feature]]
 id = "adopt"
 title = "After a restart, find running dens by Den status and Lease; never respawn one"
-status = "todo"
+status = "done"
+note = "Leases count from dennet's start, so dens get a full term to renew; den refuses to start twice"
 needs = ["/deps/den#lease"]
 
 [[feature]]

@@ -75,6 +75,9 @@ type Options struct {
 	Socket string
 	// TCPAddr, if set, is a TLS listener that requires the user token.
 	TCPAddr string
+	// Den is the den binary started for each Den that has no den running.
+	// Empty starts none; deleting a Den still stops its den.
+	Den string
 }
 
 type localConnKey struct{}
@@ -149,6 +152,7 @@ func Run(ctx context.Context, o Options) error {
 	// (its listener-stopped channel is nil), so nothing waits for it and its
 	// deferred Destroy never runs; Run calls Destroy itself.
 	go func() { errc <- prepared.RunWithContext(ctx) }()
+	go runDens(ctx, o.Den, o.Socket)
 
 	select {
 	case err = <-errc:

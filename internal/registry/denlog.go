@@ -42,7 +42,7 @@ func (r *logREST) Connect(ctx context.Context, name string, _ runtime.Object, re
 	}
 	d := obj.(*denv1.Den)
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		conn, n, err := history(req.Context(), denSocket(d), req.URL.Query().Get("color") == "true")
+		conn, n, err := history(req.Context(), DenSocket(d), req.URL.Query().Get("color") == "true")
 		if err != nil {
 			resp.Error(apierrors.NewServiceUnavailable(fmt.Sprintf("den %s/%s: %v", d.Namespace, d.Name, err)))
 			return
@@ -82,11 +82,11 @@ func history(ctx context.Context, socket string, color bool) (net.Conn, int64, e
 	return conn, int64(binary.LittleEndian.Uint32(hdr[:4])) - 1, nil
 }
 
-// denSocket is where the den is listening: its status says, or else where
+// DenSocket is where the den is listening: its status says, or else where
 // den puts it on this host. See socketPath in den.
 // ponytail: assumes the den runs on this host; status.host is ignored until
 // dennet reaches dens on other hosts.
-func denSocket(d *denv1.Den) string {
+func DenSocket(d *denv1.Den) string {
 	if d.Status.Socket != "" {
 		return d.Status.Socket
 	}

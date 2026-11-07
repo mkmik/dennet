@@ -54,8 +54,9 @@ func TestDenProtocol(t *testing.T) {
 	}
 	md, spec := den["metadata"].(map[string]any), den["spec"].(map[string]any)
 	uid, rv := md["uid"].(string), md["resourceVersion"].(string)
-	if spec["restartPolicy"] != "Never" || md["generation"] != 1.0 || den["status"] != nil && len(den["status"].(map[string]any)) != 0 {
-		t.Fatalf("create should default spec, set generation 1 and drop status: %v", den)
+	if spec["restartPolicy"] != "Never" || md["generation"] != 1.0 || den["status"] != nil && len(den["status"].(map[string]any)) != 0 ||
+		len(md["finalizers"].([]any)) != 1 || md["finalizers"].([]any)[0] != denv1.DenFinalizer {
+		t.Fatalf("create should default spec, set generation 1, add the finalizer and drop status: %v", den)
 	}
 
 	events := watch(t, c, base+"?watch=true&fieldSelector=metadata.name%3Dbuild&resourceVersion="+rv)
@@ -103,8 +104,11 @@ func TestDenProtocol(t *testing.T) {
 	if code, m := do("DELETE", base+"/build", "", ""); code != 200 {
 		t.Fatalf("delete: %d %v", code, m)
 	}
-	if e := next(t, events); e.Type != "DELETED" {
-		t.Fatalf("want DELETED, got %v", e)
+	// First MODIFIED with a deletionTimestamp; DELETED once its den is gone.
+	for e := next(t, events); e.Type != "DELETED"; e = next(t, events) {
+		if e.Type != "MODIFIED" {
+			t.Fatalf("want DELETED, got %v", e)
+		}
 	}
 	if code, _ := do("PATCH", base+"/build/status", "application/merge-patch+json", patch); code != 404 {
 		t.Fatalf("status patch after delete: want 404, got %d", code)
@@ -180,7 +184,7 @@ func TestSpacesAndSurfaces(t *testing.T) {
 // TestRestart checks that objects outlive a restart on the same state dir.
 func TestRestart(t *testing.T) {
 	dir := tempDir(t)
-	c, stop := run(t, dir)
+	c, stop := run(t, Options{StateDir: dir})
 	const url = "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/default/spaces"
 	resp, err := c.Post(url, "application/json", strings.NewReader(`{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"kept"}}`))
 	if err != nil {
@@ -192,7 +196,7 @@ func TestRestart(t *testing.T) {
 	}
 	stop()
 
-	c, _ = run(t, dir)
+	c, _ = run(t, Options{StateDir: dir})
 	if code := get(t, c, url+"/kept"); code != 200 {
 		t.Fatalf("GET after restart: %d", code)
 	}
@@ -226,7 +230,7 @@ func get(t *testing.T, c *http.Client, url string) int {
 // and returns a client for its socket once it is ready.
 func start(t *testing.T) (*http.Client, string) {
 	dir := tempDir(t)
-	c, _ := run(t, dir)
+	c, _ := run(t, Options{StateDir: dir})
 	return c, dir
 }
 
@@ -240,13 +244,15 @@ func tempDir(t *testing.T) string {
 	return dir
 }
 
-// run runs dennet on dir until stop is called or the test ends.
-func run(t *testing.T, dir string) (c *http.Client, stop func()) {
+// run runs dennet with o, its socket in o.StateDir, until stop is called or
+// the test ends.
+func run(t *testing.T, o Options) (c *http.Client, stop func()) {
 	t.Helper()
-	sock := filepath.Join(dir, "s")
+	sock := filepath.Join(o.StateDir, "s")
+	o.Socket = sock
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
-	go func() { done <- Run(ctx, Options{StateDir: dir, Socket: sock}) }()
+	go func() { done <- Run(ctx, o) }()
 	stop = sync.OnceFunc(func() {
 		cancel()
 		if err := <-done; err != nil {
@@ -327,6 +333,7 @@ func fakeDen(t *testing.T, path, text string) {
 	t.Cleanup(func() { ln.Close() })
 	go func() {
 		conn, err := ln.Accept()
+		ln.Close() // then gone, as far as deleting its Den is concerned
 		if err != nil {
 			return
 		}

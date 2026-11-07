@@ -5,6 +5,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -58,11 +59,15 @@ func (denStrategy) WarningsOnUpdate(context.Context, runtime.Object, runtime.Obj
 	return nil
 }
 
-// PrepareForCreate drops any status: only den writes it.
+// PrepareForCreate drops any status (only den writes it) and adds the
+// finalizer that keeps the Den until its den has stopped.
 func (denStrategy) PrepareForCreate(_ context.Context, obj runtime.Object) {
 	d := obj.(*denv1.Den)
 	d.Status = denv1.DenStatus{}
 	d.Generation = 1
+	if !slices.Contains(d.Finalizers, denv1.DenFinalizer) {
+		d.Finalizers = append(d.Finalizers, denv1.DenFinalizer)
+	}
 }
 
 // PrepareForUpdate keeps status as stored and bumps generation on spec changes.

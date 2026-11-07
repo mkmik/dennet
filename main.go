@@ -103,6 +103,7 @@ func main() {
 			return server.Run(ctx, o)
 		},
 	}
+	run.Flags().StringVar(&o.Den, "den", "den", "den binary to start for each Den without a live Lease (empty: start none)")
 	run.Flags().StringVar(&o.TCPAddr, "tcp", "", "also serve TLS on this address (e.g. 127.0.0.1:0), for stock kubectl and remote clients")
 	srv := &cobra.Command{Use: "server", Short: "Manage the dennet API server"}
 	srv.AddCommand(run)
