@@ -13,5 +13,8 @@ why = "Served from the embedded API server"
 +++
 
 Not in the PRD. Dens and Leases are namespaced, and kubectl expects
-namespaces to exist. No lifecycle: deleting a namespace leaves its objects
+namespaces to exist. Registering a Host creates the namespace named after it,
+owned by the Host, and deleting the Host deletes it. A namespace that
+already existed gets no owner and stays.
+No lifecycle: deleting a namespace leaves its objects
 in place.
