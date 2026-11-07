@@ -37,6 +37,9 @@ func NewHost(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*regist
 		if s := h.Spec.SocketPath; s != "" && !strings.HasPrefix(s, "/") {
 			errs = append(errs, field.Invalid(field.NewPath("spec", "socketPath"), s, "must be an absolute path"))
 		}
+		if s := h.Spec.DenPath; s != "" && !strings.HasPrefix(s, "/") {
+			errs = append(errs, field.Invalid(field.NewPath("spec", "denPath"), s, "must be an absolute path"))
+		}
 		return errs
 	}
 	return newStore(plainStrategy{typer, names.SimpleNameGenerator, validate, true}, opts,

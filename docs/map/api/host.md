@@ -12,6 +12,11 @@ title = "spec.ssh, the ssh destination, and spec.socketPath, the dennet socket t
 status = "done"
 
 [[feature]]
+id = "den-path"
+title = "spec.denPath, den there, for clients that run it on the Host (dense attaching); else a login shell's PATH"
+status = "done"
+
+[[feature]]
 id = "status"
 title = "Capacity and last seen, from the PRD"
 status = "todo"

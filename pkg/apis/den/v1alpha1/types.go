@@ -218,6 +218,10 @@ type HostSpec struct {
 	// SocketPath is the absolute path of the dennet socket there. By default a
 	// shell there looks where dennet server run puts it.
 	SocketPath string `json:"socketPath,omitempty"`
+	// DenPath is the absolute path of den there, for clients that run den on
+	// the Host, such as dense attaching a terminal. By default they look for
+	// den on the PATH of a login shell there.
+	DenPath string `json:"denPath,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

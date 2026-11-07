@@ -377,6 +377,9 @@ func TestHost(t *testing.T) {
 	if code, m := post(here, hosts, `{"kind":"Host","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"far"},"spec":{"ssh":"x","socketPath":"run/s"}}`); code != 422 {
 		t.Fatalf("relative socketPath: want 422, got %d %v", code, m)
 	}
+	if code, m := post(here, hosts, `{"kind":"Host","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"far"},"spec":{"ssh":"x","denPath":"bin/den"}}`); code != 422 {
+		t.Fatalf("relative denPath: want 422, got %d %v", code, m)
+	}
 	if code, m := post(here, hosts, `{"kind":"Host","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"far"},"spec":{"ssh":"far.example"}}`); code != 201 {
 		t.Fatalf("Host: %d %v", code, m)
 	}

@@ -17970,6 +17970,13 @@ func schema_pkg_apis_den_v1alpha1_HostSpec(ref common.ReferenceCallback) common.
 							Format:      "",
 						},
 					},
+					"denPath": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DenPath is the absolute path of den there, for clients that run den on the Host, such as dense attaching a terminal. By default they look for den on the PATH of a login shell there.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"ssh"},
 			},

@@ -62,6 +62,7 @@ metadata: {name: box}
 spec:
   ssh: me@box.example  # anything ssh accepts, e.g. an alias from ~/.ssh/config
   # socketPath: /run/user/1000/dennet/dennet.sock  # optional, found by default
+  # denPath: /home/me/bin/den  # optional, for clients that run den there
 EOF
 dennet get dens -n box
 ```
