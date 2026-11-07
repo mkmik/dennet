@@ -60,15 +60,19 @@ apiVersion: den.mkm.pub/v1alpha1
 kind: Host
 metadata: {name: box}
 spec:
-  ssh: me@box.example     # anything ssh accepts, e.g. an alias from ~/.ssh/config
-  dennet: ~/go/bin/dennet # optional, defaults to dennet on the remote PATH
+  ssh: me@box.example  # anything ssh accepts, e.g. an alias from ~/.ssh/config
+  # socketPath: /run/user/1000/dennet/dennet.sock  # optional, found by default
 EOF
 dennet get dens -n box
 ```
 
-dennet runs `ssh <spec.ssh> <spec.dennet> server dial-stdio`, which connects
-to the dennet socket on that machine. One ssh carries every request for the
-Host. ssh runs in batch mode, so it needs a key or an agent, not a password.
+dennet runs `ssh -W <socket> <spec.ssh>`, so ssh forwards to the dennet socket
+on that machine; dennet need not be on its PATH. Without `spec.socketPath`, a
+shell there finds the socket first: `$XDG_RUNTIME_DIR/dennet/dennet.sock`, else
+`$XDG_STATE_HOME/dennet/dennet.sock` (`~/.local/state/dennet/dennet.sock`).
+One ssh carries every request for the Host. ssh runs in batch mode, so it
+needs a key or an agent, not a password, and sshd must allow stream local
+forwarding (the default).
 
 A request in namespace `box` is sent there with `default` in its place, and
 `metadata.namespace` is changed back to `box` in the answer. Nothing is

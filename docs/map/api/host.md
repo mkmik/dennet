@@ -8,7 +8,7 @@ refs = ["pkg/apis/den/v1alpha1/types.go", "internal/registry/host.go"]
 
 [[feature]]
 id = "ssh"
-title = "spec.ssh, the ssh destination, and spec.dennet, the remote dennet command"
+title = "spec.ssh, the ssh destination, and spec.socketPath, the dennet socket there"
 status = "done"
 
 [[feature]]

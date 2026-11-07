@@ -17865,7 +17865,7 @@ func schema_pkg_apis_den_v1alpha1_Host(ref common.ReferenceCallback) common.Open
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Host is another machine running dennet. Its objects show up here in the namespace with the Host's name; there they live in its default namespace. dennet reaches it with ssh, running dennet server dial-stdio there.",
+				Description: "Host is another machine running dennet. Its objects show up here in the namespace with the Host's name; there they live in its default namespace. dennet reaches it with ssh, which forwards to the dennet socket there.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -17963,9 +17963,9 @@ func schema_pkg_apis_den_v1alpha1_HostSpec(ref common.ReferenceCallback) common.
 							Format:      "",
 						},
 					},
-					"dennet": {
+					"socketPath": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Dennet is the command that runs dennet there, read by the remote shell, e.g. \"~/go/bin/dennet --socket=/run/x.sock\". Defaults to dennet.",
+							Description: "SocketPath is the absolute path of the dennet socket there. By default a shell there looks where dennet server run puts it.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

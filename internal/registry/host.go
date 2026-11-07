@@ -34,6 +34,9 @@ func NewHost(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*regist
 		case strings.HasPrefix(h.Spec.SSH, "-"):
 			errs = append(errs, field.Invalid(ssh, h.Spec.SSH, "must not start with -"))
 		}
+		if s := h.Spec.SocketPath; s != "" && !strings.HasPrefix(s, "/") {
+			errs = append(errs, field.Invalid(field.NewPath("spec", "socketPath"), s, "must be an absolute path"))
+		}
 		return errs
 	}
 	return newStore(plainStrategy{typer, names.SimpleNameGenerator, validate, true}, opts,
