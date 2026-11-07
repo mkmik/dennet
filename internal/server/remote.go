@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -45,11 +44,48 @@ type hostProxy struct {
 	proxy *httputil.ReverseProxy
 }
 
-// dialHost opens a connection to the dennet on a Host. Tests replace it.
+// dialHost opens a connection to the dennet socket on a Host, which ssh
+// forwards: nothing of dennet's has to run there. Tests replace it.
 var dialHost = func(spec denv1.HostSpec) (net.Conn, error) {
+	path := spec.SocketPath
+	if path == "" {
+		var err error
+		if path, err = findSocket(spec.SSH); err != nil {
+			return nil, err
+		}
+	}
 	// -- ends ssh's options, so the destination can't be read as one.
-	return cmdConn(exec.Command("ssh", "-T", "-o", "BatchMode=yes", "-o", "ServerAliveInterval=15",
-		"--", spec.SSH, cmp.Or(spec.Dennet, "dennet")+" server dial-stdio"))
+	return cmdConn(exec.Command("ssh", "-o", "BatchMode=yes", "-o", "ServerAliveInterval=15",
+		"-W", path, "--", spec.SSH))
+}
+
+// probeSocket prints the first live dennet socket where dennet server run
+// puts it by default: $XDG_RUNTIME_DIR/dennet/dennet.sock, else
+// <state-dir>/dennet.sock. It has no single quotes, so it can be quoted
+// for the remote shell, whichever that is.
+const probeSocket = `for s in ${XDG_RUNTIME_DIR:+"$XDG_RUNTIME_DIR/dennet/dennet.sock"} "${XDG_STATE_HOME:-$HOME/.local/state}/dennet/dennet.sock"; do [ -S "$s" ] && { echo "$s"; exit 0; }; done; exit 1`
+
+// findSocket asks the Host where its dennet socket is. sshd won't expand
+// ~ or $XDG_RUNTIME_DIR in a forwarded path, so a shell there has to.
+//
+// ponytail: probes on every dial; dials are rare, as one connection
+// carries every request until it breaks.
+func findSocket(dest string) (string, error) {
+	var stderr bytes.Buffer
+	cmd := exec.Command("ssh", "-T", "-o", "BatchMode=yes", "--", dest, "sh -c '"+probeSocket+"'")
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
+	path := strings.TrimSpace(string(out))
+	var exit *exec.ExitError
+	switch {
+	case errors.As(err, &exit) && exit.ExitCode() == 1:
+		return "", fmt.Errorf("no dennet socket there; is dennet server run going? (set spec.socketPath if it was started with --socket)")
+	case err != nil:
+		return "", fmt.Errorf("ssh: %v: %s", err, strings.TrimSpace(stderr.String()))
+	case !strings.HasPrefix(path, "/"):
+		return "", fmt.Errorf("socket probe printed %q", path)
+	}
+	return path, nil
 }
 
 func (h *remote) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -373,6 +374,9 @@ func TestHost(t *testing.T) {
 	if code, m := post(here, hosts, `{"kind":"Host","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"far"},"spec":{"ssh":"-oProxyCommand=x"}}`); code != 422 {
 		t.Fatalf("ssh option as destination: want 422, got %d %v", code, m)
 	}
+	if code, m := post(here, hosts, `{"kind":"Host","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"far"},"spec":{"ssh":"x","socketPath":"run/s"}}`); code != 422 {
+		t.Fatalf("relative socketPath: want 422, got %d %v", code, m)
+	}
 	if code, m := post(here, hosts, `{"kind":"Host","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"far"},"spec":{"ssh":"far.example"}}`); code != 201 {
 		t.Fatalf("Host: %d %v", code, m)
 	}
@@ -399,5 +403,43 @@ func TestHost(t *testing.T) {
 	post(far, onFar, `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"b"}}`)
 	if e := next(t, events); e.Type != "ADDED" || e.Object["metadata"].(map[string]any)["name"] != "b" || nsOf(e.Object) != "far" {
 		t.Fatalf("watch through Host: %v", e)
+	}
+}
+
+// TestProbeSocket runs the script findSocket sends over ssh: it finds the
+// socket where dennet server run puts it, with or without XDG_RUNTIME_DIR.
+func TestProbeSocket(t *testing.T) {
+	home, runtime := tempDir(t), tempDir(t)
+	listen := func(path string) {
+		t.Helper()
+		os.MkdirAll(filepath.Dir(path), 0o700)
+		l, err := net.Listen("unix", path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { l.Close() })
+	}
+	probe := func(env ...string) (string, error) {
+		cmd := exec.Command("sh", "-c", probeSocket)
+		cmd.Env = append([]string{"HOME=" + home, "PATH=" + os.Getenv("PATH")}, env...)
+		out, err := cmd.Output()
+		return strings.TrimSpace(string(out)), err
+	}
+
+	if out, err := probe(); err == nil {
+		t.Fatalf("no socket: want exit 1, got %q", out)
+	}
+	state := filepath.Join(home, ".local", "state", "dennet", "dennet.sock")
+	listen(state)
+	if out, _ := probe(); out != state {
+		t.Errorf("no XDG_RUNTIME_DIR: got %q, want %q", out, state)
+	}
+	if out, _ := probe("XDG_RUNTIME_DIR=" + runtime); out != state {
+		t.Errorf("nothing in XDG_RUNTIME_DIR: got %q, want %q", out, state)
+	}
+	sock := filepath.Join(runtime, "dennet", "dennet.sock")
+	listen(sock)
+	if out, _ := probe("XDG_RUNTIME_DIR=" + runtime); out != sock {
+		t.Errorf("XDG_RUNTIME_DIR: got %q, want %q", out, sock)
 	}
 }

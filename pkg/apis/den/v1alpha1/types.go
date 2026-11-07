@@ -203,7 +203,7 @@ type SurfaceList struct {
 
 // Host is another machine running dennet. Its objects show up here in the
 // namespace with the Host's name; there they live in its default namespace.
-// dennet reaches it with ssh, running dennet server dial-stdio there.
+// dennet reaches it with ssh, which forwards to the dennet socket there.
 type Host struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -215,9 +215,9 @@ type HostSpec struct {
 	// SSH is the ssh destination: [user@]host, a Host alias from
 	// ~/.ssh/config, or ssh://[user@]host[:port].
 	SSH string `json:"ssh"`
-	// Dennet is the command that runs dennet there, read by the remote
-	// shell, e.g. "~/go/bin/dennet --socket=/run/x.sock". Defaults to dennet.
-	Dennet string `json:"dennet,omitempty"`
+	// SocketPath is the absolute path of the dennet socket there. By default a
+	// shell there looks where dennet server run puts it.
+	SocketPath string `json:"socketPath,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

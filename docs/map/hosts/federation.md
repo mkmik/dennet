@@ -13,7 +13,7 @@ status = "done"
 
 [[feature]]
 id = "ssh"
-title = "One ssh per Host running dennet server dial-stdio, carrying HTTP/2 without TLS"
+title = "One ssh -W per Host, forwarding to its dennet socket and carrying HTTP/2 without TLS; a shell there finds the socket unless spec.socketPath is set"
 status = "done"
 
 [[feature]]
