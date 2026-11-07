@@ -78,7 +78,9 @@ forwarding (the default).
 A request in namespace `box` is sent there with `default` in its place, and
 `metadata.namespace` is changed back to `box` in the answer. Nothing is
 copied, so while the Host can't be reached its namespace answers 502.
-`-A` lists only this machine's objects.
+`-A` lists only this machine's objects. Creating a Host also creates its
+namespace here, owned by the Host, so `dennet get ns` shows it. Deleting
+the Host deletes that namespace, unless it existed before the Host.
 
 ## Storage
 

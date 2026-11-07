@@ -220,6 +220,7 @@ func newAPIServer(token, socket, etcdURL string) (*genericapiserver.GenericAPISe
 	if err != nil {
 		return nil, err
 	}
+	hosts.AfterDelete = ns.DeleteOwned
 
 	cfg := genericapiserver.NewConfig(Codecs)
 	// Inside authentication, which runs before any request reaches a Host.

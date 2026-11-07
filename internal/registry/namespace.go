@@ -15,6 +15,8 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage/names"
+
+	denv1 "mkm.pub/dennet/pkg/apis/den/v1alpha1"
 )
 
 // Namespaces is the storage for core/v1 namespaces.
@@ -39,9 +41,10 @@ func NewNamespace(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*N
 
 func (*Namespaces) ShortNames() []string { return []string{"ns"} }
 
-// Ensure creates the namespace unless it exists.
-func (n *Namespaces) Ensure(ctx context.Context, name string) error {
-	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
+// Ensure creates the namespace unless it exists. An existing namespace
+// keeps its owners.
+func (n *Namespaces) Ensure(ctx context.Context, name string, owners ...metav1.OwnerReference) error {
+	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name, OwnerReferences: owners}}
 	_, err := n.Create(genericapirequest.WithNamespace(ctx, ""), ns, rest.ValidateAllObjectFunc, &metav1.CreateOptions{})
 	if apierrors.IsAlreadyExists(err) {
 		return nil
@@ -68,6 +71,32 @@ func (a autoCreate) Admit(ctx context.Context, attrs admission.Attributes, _ adm
 		return nil
 	}
 	return a.ns.Ensure(ctx, attrs.GetNamespace())
+}
+
+// Validate creates the namespace a Host stands in for, owned by the Host.
+// It runs after the Host passed validation, so a refused Host leaves no
+// namespace behind. A namespace that already exists is left unowned.
+func (a autoCreate) Validate(ctx context.Context, attrs admission.Attributes, _ admission.ObjectInterfaces) error {
+	if attrs.IsDryRun() || attrs.GetResource().GroupResource() != denv1.SchemeGroupVersion.WithResource("hosts").GroupResource() {
+		return nil
+	}
+	h := attrs.GetObject().(*denv1.Host)
+	return a.ns.Ensure(ctx, h.Name, *metav1.NewControllerRef(h, denv1.SchemeGroupVersion.WithKind("Host")))
+}
+
+// DeleteOwned is an AfterDelete hook: it deletes the namespace named after
+// obj if obj owns it, and leaves it alone otherwise.
+// ponytail: errors are dropped and the namespace stays; there is no
+// garbage collector to retry.
+func (n *Namespaces) DeleteOwned(obj runtime.Object, _ *metav1.DeleteOptions) {
+	owner := obj.(metav1.Object)
+	ctx := genericapirequest.WithNamespace(context.Background(), "")
+	got, err := n.Get(ctx, owner.GetName(), &metav1.GetOptions{})
+	if err != nil || !metav1.IsControlledBy(got.(metav1.Object), owner) {
+		return
+	}
+	uid := got.(metav1.Object).GetUID()
+	n.Delete(ctx, owner.GetName(), rest.ValidateAllObjectFunc, &metav1.DeleteOptions{Preconditions: &metav1.Preconditions{UID: &uid}})
 }
 
 type namespaceStrategy struct {

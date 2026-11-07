@@ -383,6 +383,33 @@ func TestHost(t *testing.T) {
 	if code, m := post(here, hosts, `{"kind":"Host","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"far"},"spec":{"ssh":"far.example"}}`); code != 201 {
 		t.Fatalf("Host: %d %v", code, m)
 	}
+	if code := get(t, here, "http://dennet/api/v1/namespaces/far"); code != 200 {
+		t.Fatalf("namespace of Host: %d", code)
+	}
+
+	// A Host takes away only the namespace it made.
+	del := func(url string) {
+		t.Helper()
+		req, _ := http.NewRequest("DELETE", url, nil)
+		resp, err := here.Do(req)
+		if err != nil || resp.StatusCode != 200 {
+			t.Fatalf("delete %s: %v %v", url, err, resp)
+		}
+		resp.Body.Close()
+	}
+	post(here, "http://dennet/api/v1/namespaces", `{"kind":"Namespace","apiVersion":"v1","metadata":{"name":"mine"}}`)
+	for _, n := range []string{"mine", "made"} {
+		if code, m := post(here, hosts, `{"kind":"Host","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"`+n+`"},"spec":{"ssh":"x"}}`); code != 201 {
+			t.Fatalf("Host %s: %d %v", n, code, m)
+		}
+		del(hosts + "/" + n)
+	}
+	if code := get(t, here, "http://dennet/api/v1/namespaces/mine"); code != 200 {
+		t.Fatalf("namespace made by hand, after its Host is deleted: want 200, got %d", code)
+	}
+	if code := get(t, here, "http://dennet/api/v1/namespaces/made"); code != 404 {
+		t.Fatalf("namespace made by a Host, after it is deleted: want 404, got %d", code)
+	}
 
 	const viaHere = "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/far/spaces"
 	const onFar = "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/default/spaces"
