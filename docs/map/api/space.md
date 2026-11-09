@@ -19,5 +19,6 @@ why = "Deepcopy and OpenAPI for the types"
 
 From the dense PRD. Outside tools (ccwt) create Spaces and keep title,
 badges and state current; dense writes order, collapsed and renames.
+spec.workingDir, an absolute path, is where dens for the space's surfaces start.
 Nothing in it is tied to git. Validation only checks state and that a
 space is not its own parent; longer cycles are not caught.
