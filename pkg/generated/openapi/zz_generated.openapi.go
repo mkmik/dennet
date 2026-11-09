@@ -18183,6 +18183,20 @@ func schema_pkg_apis_den_v1alpha1_SpaceSpec(ref common.ReferenceCallback) common
 							},
 						},
 					},
+					"tags": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tags are free-form labels; dennet gives them no meaning.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
 					"state": {
 						SchemaProps: spec.SchemaProps{
 							Description: "State drives the state dot.",

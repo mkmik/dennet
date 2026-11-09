@@ -134,6 +134,8 @@ type SpaceSpec struct {
 	Subtitle string  `json:"subtitle,omitempty"`
 	Icon     string  `json:"icon,omitempty"`
 	Badges   []Badge `json:"badges,omitempty"`
+	// Tags are free-form labels; dennet gives them no meaning.
+	Tags []string `json:"tags,omitempty"`
 	// State drives the state dot.
 	State     SpaceState `json:"state,omitempty"`
 	Collapsed bool       `json:"collapsed,omitempty"`

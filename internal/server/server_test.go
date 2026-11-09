@@ -148,7 +148,7 @@ func TestSpacesAndSurfaces(t *testing.T) {
 		res, body string
 		want      int
 	}{
-		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"kubecfg"},"spec":{"title":"kubecfg","workingDir":"/src/kubecfg"}}`, 201},
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"kubecfg"},"spec":{"title":"kubecfg","tags":["go","work"],"workingDir":"/src/kubecfg"}}`, 201},
 		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"rel"},"spec":{"workingDir":"src"}}`, 422},
 		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m"},"spec":{"parent":"kubecfg","order":20,"state":"waiting","badges":[{"text":"MR !412","tone":"info"}]}}`, 201},
 		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"state":"sleepy"}}`, 422},
