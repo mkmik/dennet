@@ -40,6 +40,16 @@ func NewSpace(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*regis
 					errs = append(errs, field.Required(p.Child("badges").Index(i).Child("text"), ""))
 				}
 			}
+			seen := map[string]bool{}
+			for i, t := range s.Spec.Tags {
+				switch {
+				case t == "":
+					errs = append(errs, field.Required(p.Child("tags").Index(i), ""))
+				case seen[t]:
+					errs = append(errs, field.Duplicate(p.Child("tags").Index(i), t))
+				}
+				seen[t] = true
+			}
 			switch s.Spec.State {
 			case "", denv1.SpaceIdle, denv1.SpaceBusy, denv1.SpaceWaiting, denv1.SpaceError:
 			default:
