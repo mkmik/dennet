@@ -150,6 +150,8 @@ func TestSpacesAndSurfaces(t *testing.T) {
 	}{
 		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"kubecfg"},"spec":{"title":"kubecfg","tags":["go","work"],"workingDir":"/src/kubecfg"}}`, 201},
 		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"rel"},"spec":{"workingDir":"src"}}`, 422},
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"t"},"spec":{"tags":[""]}}`, 422},
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"t"},"spec":{"tags":["a","a"]}}`, 422},
 		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m"},"spec":{"parent":"kubecfg","order":20,"state":"waiting","badges":[{"text":"MR !412","tone":"info"}]}}`, 201},
 		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"state":"sleepy"}}`, 422},
 		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"parent":"x"}}`, 422},
