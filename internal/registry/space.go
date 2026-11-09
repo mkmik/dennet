@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/validation"
@@ -31,6 +32,9 @@ func NewSpace(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*regis
 				errs = append(errs, field.Invalid(p.Child("parent"), s.Spec.Parent, "a space cannot be its own parent"))
 			}
 			errs = append(errs, validRef(p.Child("parent"), s.Spec.Parent)...)
+			if d := s.Spec.WorkingDir; d != "" && !strings.HasPrefix(d, "/") {
+				errs = append(errs, field.Invalid(p.Child("workingDir"), d, "must be an absolute path"))
+			}
 			for i, b := range s.Spec.Badges {
 				if b.Text == "" {
 					errs = append(errs, field.Required(p.Child("badges").Index(i).Child("text"), ""))

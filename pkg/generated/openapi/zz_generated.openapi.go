@@ -18196,6 +18196,13 @@ func schema_pkg_apis_den_v1alpha1_SpaceSpec(ref common.ReferenceCallback) common
 							Format: "",
 						},
 					},
+					"workingDir": {
+						SchemaProps: spec.SchemaProps{
+							Description: "WorkingDir is the absolute working directory of dens started for this space's surfaces. Empty leaves it to whoever starts the den.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},

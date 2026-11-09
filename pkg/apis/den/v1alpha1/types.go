@@ -137,6 +137,9 @@ type SpaceSpec struct {
 	// State drives the state dot.
 	State     SpaceState `json:"state,omitempty"`
 	Collapsed bool       `json:"collapsed,omitempty"`
+	// WorkingDir is the absolute working directory of dens started for
+	// this space's surfaces. Empty leaves it to whoever starts the den.
+	WorkingDir string `json:"workingDir,omitempty"`
 }
 
 type Badge struct {
