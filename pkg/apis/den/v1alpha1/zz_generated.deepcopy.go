@@ -375,6 +375,11 @@ func (in *SpaceSpec) DeepCopyInto(out *SpaceSpec) {
 		*out = make([]Badge, len(*in))
 		copy(*out, *in)
 	}
+	if in.Tags != nil {
+		in, out := &in.Tags, &out.Tags
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
