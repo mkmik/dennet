@@ -483,3 +483,43 @@ func TestProbeSocket(t *testing.T) {
 		t.Errorf("XDG_RUNTIME_DIR: got %q, want %q", out, sock)
 	}
 }
+
+// TestHostIdle checks that an idle connection to a Host closes, so a Host
+// that was deleted or changed doesn't keep its ssh running.
+func TestHostIdle(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	closed := make(chan struct{})
+	srv := &http.Server{
+		Handler:   http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}),
+		Protocols: new(http.Protocols),
+		ConnState: func(_ net.Conn, s http.ConnState) {
+			if s == http.StateClosed {
+				close(closed)
+			}
+		},
+	}
+	srv.Protocols.SetUnencryptedHTTP2(true)
+	go srv.Serve(ln)
+	t.Cleanup(func() { srv.Close() })
+
+	dial, idle := dialHost, hostIdle
+	t.Cleanup(func() { dialHost, hostIdle = dial, idle })
+	dialHost = func(denv1.HostSpec) (net.Conn, error) { return net.Dial("tcp", ln.Addr().String()) }
+	hostIdle = 10 * time.Millisecond
+
+	p := (&remote{}).proxyFor(&denv1.Host{})
+	req, _ := http.NewRequest("GET", "http://dennet/", nil)
+	resp, err := p.Transport.RoundTrip(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	select {
+	case <-closed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("idle connection to the Host still open")
+	}
+}
