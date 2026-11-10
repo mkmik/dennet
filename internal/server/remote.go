@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +39,10 @@ type remote struct {
 	mu      sync.Mutex
 	proxies map[string]hostProxy
 }
+
+// hostIdle is how long a connection to a Host (an ssh) stays open with no
+// requests. Without a limit, one to a deleted or changed Host never closes.
+var hostIdle = 5 * time.Minute
 
 type hostProxy struct {
 	spec  denv1.HostSpec
@@ -120,7 +125,8 @@ func (h *remote) proxyFor(host *denv1.Host) *httputil.ReverseProxy {
 	}
 	// One HTTP/2 connection, so one ssh, carries every request to the host.
 	t := &http.Transport{
-		Protocols: new(http.Protocols),
+		Protocols:       new(http.Protocols),
+		IdleConnTimeout: hostIdle,
 		DialContext: func(context.Context, string, string) (net.Conn, error) {
 			return dialHost(host.Spec)
 		},

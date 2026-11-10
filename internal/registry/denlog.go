@@ -48,6 +48,9 @@ func (r *logREST) Connect(ctx context.Context, name string, _ runtime.Object, re
 			return
 		}
 		defer conn.Close()
+		// A den that stops mid-reply must not hold the handler after the
+		// client has gone.
+		context.AfterFunc(req.Context(), func() { conn.Close() })
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		io.CopyN(w, conn, n)
 	}), nil
