@@ -19,6 +19,10 @@ on = "/api/surface"
 why = "Draws each space's tabs from Surfaces"
 
 [[needs]]
+on = "/controllers/archive"
+why = "Hides archived Spaces and offers to reopen them"
+
+[[needs]]
 on = "/proxy/subresources#attach"
 why = "Its terminal is an attached den"
 
