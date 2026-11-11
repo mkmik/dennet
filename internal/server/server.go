@@ -153,6 +153,7 @@ func Run(ctx context.Context, o Options) error {
 	// deferred Destroy never runs; Run calls Destroy itself.
 	go func() { errc <- prepared.RunWithContext(ctx) }()
 	go runDens(ctx, o.Den, o.Socket)
+	go runArchive(ctx, o.Socket)
 
 	select {
 	case err = <-errc:
@@ -256,7 +257,7 @@ func newAPIServer(token, socket, etcdURL string) (*genericapiserver.GenericAPISe
 	if err != nil {
 		return nil, err
 	}
-	space, err := registry.NewSpace(Scheme, optsFor(denv1.SchemeGroupVersion))
+	space, spaceStatus, err := registry.NewSpace(Scheme, optsFor(denv1.SchemeGroupVersion))
 	if err != nil {
 		return nil, err
 	}
@@ -271,12 +272,13 @@ func newAPIServer(token, socket, etcdURL string) (*genericapiserver.GenericAPISe
 
 	denGroup := genericapiserver.NewDefaultAPIGroupInfo(denv1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 	denGroup.VersionedResourcesStorageMap[denv1.SchemeGroupVersion.Version] = map[string]rest.Storage{
-		"dens":        den,
-		"dens/status": denStatus,
-		"dens/log":    registry.NewDenLog(den),
-		"spaces":      space,
-		"surfaces":    surface,
-		"hosts":       hosts,
+		"dens":          den,
+		"dens/status":   denStatus,
+		"dens/log":      registry.NewDenLog(den),
+		"spaces":        space,
+		"spaces/status": spaceStatus,
+		"surfaces":      surface,
+		"hosts":         hosts,
 	}
 	leaseGroup := genericapiserver.NewDefaultAPIGroupInfo(coordinationv1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 	leaseGroup.VersionedResourcesStorageMap[coordinationv1.SchemeGroupVersion.Version] = map[string]rest.Storage{

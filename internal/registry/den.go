@@ -10,9 +10,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apiserver/pkg/registry/generic"
@@ -132,10 +134,10 @@ func (denStatusStrategy) ValidateUpdate(_ context.Context, obj, _ runtime.Object
 		[]denv1.DenPhase{denv1.DenPending, denv1.DenRunning, denv1.DenExited, denv1.DenFailed, denv1.DenLost})}
 }
 
-// statusREST exposes only get and update (and so patch) on dens/status.
+// statusREST exposes only get and update (and so patch) on a status subresource.
 type statusREST struct{ store *registry.Store }
 
-func (r *statusREST) New() runtime.Object { return &denv1.Den{} }
+func (r *statusREST) New() runtime.Object { return r.store.New() }
 func (r *statusREST) Destroy()            {}
 
 func (r *statusREST) Get(ctx context.Context, name string, opts *metav1.GetOptions) (runtime.Object, error) {
@@ -146,23 +148,27 @@ func (r *statusREST) Update(ctx context.Context, name string, objInfo rest.Updat
 	updateValidation rest.ValidateObjectUpdateFunc, _ bool, opts *metav1.UpdateOptions,
 ) (runtime.Object, bool, error) {
 	// Never create through status.
-	return r.store.Update(ctx, name, uidChecked{objInfo}, createValidation, updateValidation, false, opts)
+	return r.store.Update(ctx, name, uidChecked{objInfo, r.store.DefaultQualifiedResource}, createValidation, updateValidation, false, opts)
 }
 
 // uidChecked turns a status write carrying another incarnation's
 // metadata.uid into 409 Conflict (rather than 422 for an immutable field),
 // which is how den learns its object was replaced and stops writing.
-type uidChecked struct{ rest.UpdatedObjectInfo }
+type uidChecked struct {
+	rest.UpdatedObjectInfo
+	resource schema.GroupResource
+}
 
 func (u uidChecked) UpdatedObject(ctx context.Context, old runtime.Object) (runtime.Object, error) {
 	obj, err := u.UpdatedObjectInfo.UpdatedObject(ctx, old)
 	if err != nil {
 		return nil, err
 	}
-	n, o := obj.(*denv1.Den), old.(*denv1.Den)
-	if n.UID != "" && n.UID != o.UID {
-		return nil, apierrors.NewConflict(denv1.SchemeGroupVersion.WithResource("dens").GroupResource(), o.Name,
-			fmt.Errorf("uid %s does not match the stored Den (%s): it was replaced", n.UID, o.UID))
+	n, _ := meta.Accessor(obj)
+	o, _ := meta.Accessor(old)
+	if n.GetUID() != "" && n.GetUID() != o.GetUID() {
+		return nil, apierrors.NewConflict(u.resource, o.GetName(),
+			fmt.Errorf("uid %s does not match the stored object (%s): it was replaced", n.GetUID(), o.GetUID()))
 	}
 	return obj, nil
 }

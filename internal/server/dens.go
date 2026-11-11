@@ -39,26 +39,7 @@ const denTerm = 30 * time.Second
 //   - for a Den being deleted, it shuts its den down over the den's socket,
 //     then removes the Den's finalizer and deletes its Lease.
 func runDens(ctx context.Context, den, socket string) {
-	client := func(gv schema.GroupVersion) *restclient.RESTClient {
-		c, err := restclient.RESTClientFor(&restclient.Config{
-			Host:    "http://dennet",
-			APIPath: "/apis",
-			Dial: func(ctx context.Context, _, _ string) (net.Conn, error) {
-				return (&net.Dialer{}).DialContext(ctx, "unix", socket)
-			},
-			ContentConfig: restclient.ContentConfig{GroupVersion: &gv, NegotiatedSerializer: Codecs.WithoutConversion()},
-		})
-		if err != nil {
-			panic(err) // only for a bad config, which is fixed above
-		}
-		return c
-	}
-	denClient, leaseClient := client(denv1.SchemeGroupVersion), client(coordinationv1.SchemeGroupVersion)
-	// All namespaces: those of Hosts are not forwarded (see remote), so these
-	// are this host's objects only.
-	inform := func(c *restclient.RESTClient, resource string, obj runtime.Object) cache.SharedIndexInformer {
-		return cache.NewSharedIndexInformer(cache.NewListWatchFromClient(c, resource, "", fields.Everything()), obj, 0, cache.Indexers{})
-	}
+	denClient, leaseClient := localClient(socket, denv1.SchemeGroupVersion), localClient(socket, coordinationv1.SchemeGroupVersion)
 	dens := inform(denClient, "dens", &denv1.Den{})
 	leases := inform(leaseClient, "leases", &coordinationv1.Lease{})
 	leaseOf := func(d *denv1.Den) *coordinationv1.Lease {
@@ -67,17 +48,7 @@ func runDens(ctx context.Context, den, socket string) {
 		return lease
 	}
 
-	kick := make(chan struct{}, 1)
-	poke := func() {
-		select {
-		case kick <- struct{}{}:
-		default:
-		}
-	}
-	dens.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    func(any) { poke() },
-		UpdateFunc: func(any, any) { poke() },
-	})
+	kick := kicker(dens)
 	go dens.Run(ctx.Done())
 	go leases.Run(ctx.Done())
 	if !cache.WaitForCacheSync(ctx.Done(), dens.HasSynced, leases.HasSynced) {
@@ -120,6 +91,48 @@ func runDens(ctx context.Context, den, socket string) {
 		case <-tick.C:
 		}
 	}
+}
+
+// localClient is a client for group version gv on dennet's own socket.
+func localClient(socket string, gv schema.GroupVersion) *restclient.RESTClient {
+	c, err := restclient.RESTClientFor(&restclient.Config{
+		Host:    "http://dennet",
+		APIPath: "/apis",
+		Dial: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, "unix", socket)
+		},
+		ContentConfig: restclient.ContentConfig{GroupVersion: &gv, NegotiatedSerializer: Codecs.WithoutConversion()},
+	})
+	if err != nil {
+		panic(err) // only for a bad config, which is fixed above
+	}
+	return c
+}
+
+// inform watches resource in all namespaces. Those of Hosts are not
+// forwarded (see remote), so these are this host's objects only.
+func inform(c *restclient.RESTClient, resource string, obj runtime.Object) cache.SharedIndexInformer {
+	return cache.NewSharedIndexInformer(cache.NewListWatchFromClient(c, resource, "", fields.Everything()), obj, 0, cache.Indexers{})
+}
+
+// kicker returns a channel that gets a value after any change to the
+// informers' objects; changes that come close together share one.
+func kicker(informers ...cache.SharedIndexInformer) <-chan struct{} {
+	kick := make(chan struct{}, 1)
+	poke := func() {
+		select {
+		case kick <- struct{}{}:
+		default:
+		}
+	}
+	for _, i := range informers {
+		i.AddEventHandler(cache.ResourceEventHandlerFuncs{
+			AddFunc:    func(any) { poke() },
+			UpdateFunc: func(any, any) { poke() },
+			DeleteFunc: func(any) { poke() },
+		})
+	}
+	return kick
 }
 
 // needsDen says whether d should get a den: it hasn't finished or isn't

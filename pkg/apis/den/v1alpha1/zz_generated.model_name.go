@@ -83,6 +83,11 @@ func (in SpaceSpec) OpenAPIModelName() string {
 }
 
 // OpenAPIModelName returns the OpenAPI model name for this type.
+func (in SpaceStatus) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.SpaceStatus"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
 func (in Surface) OpenAPIModelName() string {
 	return "pub.mkm.den.v1alpha1.Surface"
 }
