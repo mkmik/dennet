@@ -22,8 +22,15 @@ func newPlain(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter, gr sche
 	return newStore(plainStrategy{typer, names.SimpleNameGenerator, validate, false}, opts, gr, singular, newObj, newList)
 }
 
-// newStore is newPlain for either scope.
-func newStore(s plainStrategy, opts generic.RESTOptionsGetter, gr schema.GroupResource, singular string,
+// strategy is what a Store needs to create, update and delete.
+type strategy interface {
+	rest.RESTCreateStrategy
+	rest.RESTUpdateStrategy
+	rest.RESTDeleteStrategy
+}
+
+// newStore is newPlain for any strategy.
+func newStore(s strategy, opts generic.RESTOptionsGetter, gr schema.GroupResource, singular string,
 	newObj, newList func() runtime.Object,
 ) (*registry.Store, error) {
 	store := &registry.Store{

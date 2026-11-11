@@ -4,7 +4,8 @@ summary = "spec.archived on a Space: delete its Surfaces and Dens, keep the Spac
 kind = "code"
 intent = "goal"
 research = "done"
-status = "todo"
+status = "done"
+refs = ["internal/server/archive.go", "internal/registry/space.go"]
 
 [[needs]]
 on = "/api/space"
@@ -42,6 +43,11 @@ Dens stop as well, and each can be reopened on its own.
 
 dennet sets `status.archivedAt` when the teardown is done. A reopen list
 sorts by it, newest first.
+
+Only dennet writes status, on spaces/status; reopening clears
+`status.archivedAt`. A Surface stays until its Den's delete is accepted, so
+`archivedAt` means every Den was asked to stop, not that every den has
+exited.
 
 Clients don't show archived Spaces in the sidebar (dense, ccwt's
 workspace list). A server-side filter would save each client doing it.

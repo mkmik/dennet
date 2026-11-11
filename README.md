@@ -75,6 +75,21 @@ deletes the den's Lease. A Den whose den isn't running goes right away; one
 whose den doesn't stop goes once its Lease has expired. This works with
 `--den=` too.
 
+## Archiving Spaces
+
+Setting `spec.archived: true` on a Space stops everything in it, while the
+Space stays listed:
+
+```sh
+dennet patch space NAME --type=merge -p '{"spec":{"archived":true}}'
+```
+
+dennet deletes the Space's Surfaces and the Dens they point at (which stops
+their dens), and sets `spec.archived` on every Space under it. Once no
+Surface is left it sets `status.archivedAt`. Only dennet writes status, on
+`spaces/status`. Setting `spec.archived` back to `false` reopens the Space
+and clears `status.archivedAt`; the Spaces under it stay archived.
+
 ## Remote hosts
 
 A `Host` is another machine running dennet. Its objects show up here in the

@@ -340,6 +340,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		v1alpha1.Space{}.OpenAPIModelName():                            schema_pkg_apis_den_v1alpha1_Space(ref),
 		v1alpha1.SpaceList{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_SpaceList(ref),
 		v1alpha1.SpaceSpec{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_SpaceSpec(ref),
+		v1alpha1.SpaceStatus{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_SpaceStatus(ref),
 		v1alpha1.Surface{}.OpenAPIModelName():                          schema_pkg_apis_den_v1alpha1_Surface(ref),
 		v1alpha1.SurfaceList{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_SurfaceList(ref),
 		v1alpha1.SurfaceSpec{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref),
@@ -18077,11 +18078,17 @@ func schema_pkg_apis_den_v1alpha1_Space(ref common.ReferenceCallback) common.Ope
 							Ref:     ref(v1alpha1.SpaceSpec{}.OpenAPIModelName()),
 						},
 					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(v1alpha1.SpaceStatus{}.OpenAPIModelName()),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			metav1.ObjectMeta{}.OpenAPIModelName(), v1alpha1.SpaceSpec{}.OpenAPIModelName()},
+			metav1.ObjectMeta{}.OpenAPIModelName(), v1alpha1.SpaceSpec{}.OpenAPIModelName(), v1alpha1.SpaceStatus{}.OpenAPIModelName()},
 	}
 }
 
@@ -18217,11 +18224,39 @@ func schema_pkg_apis_den_v1alpha1_SpaceSpec(ref common.ReferenceCallback) common
 							Format:      "",
 						},
 					},
+					"archived": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Archived asks dennet to delete the space's Surfaces and their Dens, and to archive every Space under it. The Space itself stays.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
 			v1alpha1.Badge{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_SpaceStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SpaceStatus is written only by dennet, on spaces/status.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"archivedAt": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ArchivedAt is when dennet finished archiving the space. It is cleared when spec.archived goes back to false.",
+							Ref:         ref(metav1.Time{}.OpenAPIModelName()),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			metav1.Time{}.OpenAPIModelName()},
 	}
 }
 

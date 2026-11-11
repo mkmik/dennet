@@ -120,7 +120,8 @@ type Space struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec SpaceSpec `json:"spec,omitempty"`
+	Spec   SpaceSpec   `json:"spec,omitempty"`
+	Status SpaceStatus `json:"status,omitempty"`
 }
 
 type SpaceSpec struct {
@@ -142,6 +143,16 @@ type SpaceSpec struct {
 	// WorkingDir is the absolute working directory of dens started for
 	// this space's surfaces. Empty leaves it to whoever starts the den.
 	WorkingDir string `json:"workingDir,omitempty"`
+	// Archived asks dennet to delete the space's Surfaces and their Dens,
+	// and to archive every Space under it. The Space itself stays.
+	Archived bool `json:"archived,omitempty"`
+}
+
+// SpaceStatus is written only by dennet, on spaces/status.
+type SpaceStatus struct {
+	// ArchivedAt is when dennet finished archiving the space. It is
+	// cleared when spec.archived goes back to false.
+	ArchivedAt *metav1.Time `json:"archivedAt,omitempty"`
 }
 
 type Badge struct {
