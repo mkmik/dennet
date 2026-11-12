@@ -19,6 +19,10 @@ on = "/api/surface"
 why = "Draws each space's tabs from Surfaces"
 
 [[needs]]
+on = "/api/surface#glue"
+why = "Shows two Surfaces glued side by side as one combo tab"
+
+[[needs]]
 on = "/controllers/archive"
 why = "Hides archived Spaces and offers to reopen them"
 
