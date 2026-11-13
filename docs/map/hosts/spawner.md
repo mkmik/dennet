@@ -11,15 +11,15 @@ refs = ["internal/server/spawn.go"]
 id = "spawn"
 title = "Start den fully detached (setsid), with --spec and --status URLs at dennet's socket"
 status = "done"
-note = "den apply -f <Den URL> --unix-socket <dennet socket>, for each Den without a live Lease"
+note = "den apply -f <Den URL> --unix-socket <dennet socket>, for each Den whose den socket isn't open"
 needs = ["/deps/den#spec-get", "/deps/den#status"]
 
 [[feature]]
 id = "adopt"
-title = "After a restart, find running dens by Den status and Lease; never respawn one"
+title = "After a restart, find running dens by their sockets; never respawn one"
 status = "done"
-note = "Leases count from dennet's start, so dens get a full term to renew; den refuses to start twice"
-needs = ["/deps/den#lease"]
+note = "dennet dials every den before starting any; den refuses to start twice"
+needs = ["/deps/den#socket"]
 
 [[feature]]
 id = "pid-check"

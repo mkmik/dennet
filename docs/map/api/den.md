@@ -42,7 +42,7 @@ needs = ["/controllers/finalizer"]
 
 [[feature]]
 id = "lost"
-title = "Phase Lost when the den's Lease expires"
+title = "Phase Lost when the den's socket closes"
 status = "todo"
 milestone = "m3"
 needs = ["/controllers/liveness"]
