@@ -1,6 +1,6 @@
 +++
 title = "Liveness"
-summary = "Watches Leases; sets status.phase Lost when a Den's Lease expires"
+summary = "Sets status.phase Lost when a Den's den socket closes"
 kind = "code"
 intent = "induced"
 research = "done"
@@ -11,9 +11,6 @@ milestone = "m3"
 on = "/api/lease"
 why = "What it watches"
 
-[[needs]]
-on = "/deps/den#lease"
-why = "den has to renew a Lease for one to expire"
 +++
 
-If renewal resumes, den's next status write restores the phase.
+If the den comes back, den's next status write restores the phase.

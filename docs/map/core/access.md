@@ -31,7 +31,7 @@ milestone = "m5"
 
 [[feature]]
 id = "policy"
-title = "A den token may only read its own Den, patch its status and renew its Lease"
+title = "A den token may only read its own Den, and patch its status"
 status = "todo"
 milestone = "m5"
 needs = ["#den-tokens"]
