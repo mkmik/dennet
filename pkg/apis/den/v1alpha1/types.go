@@ -195,6 +195,10 @@ type SurfaceSpec struct {
 	// Order is the position among the space's tabs, lowest first.
 	Order int32  `json:"order,omitempty"`
 	Title string `json:"title,omitempty"`
+	// Beside is the name of another Surface of the same Space that this one is
+	// glued beside, on its right: clients show the two side by side as one tab.
+	// A name that matches no such Surface glues nothing.
+	Beside string `json:"beside,omitempty"`
 	// Kind says what the tab shows, and which block below is set.
 	Kind     SurfaceKind      `json:"kind"`
 	Terminal *TerminalSurface `json:"terminal,omitempty"`

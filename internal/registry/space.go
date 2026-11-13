@@ -146,6 +146,10 @@ func NewSurface(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*reg
 				errs = append(errs, field.Required(p.Child("space"), ""))
 			}
 			errs = append(errs, validRef(p.Child("space"), v.Spec.Space)...)
+			errs = append(errs, validRef(p.Child("beside"), v.Spec.Beside)...)
+			if v.Spec.Beside != "" && v.Spec.Beside == v.Name {
+				errs = append(errs, field.Invalid(p.Child("beside"), v.Spec.Beside, "a surface cannot be beside itself"))
+			}
 			switch v.Spec.Kind {
 			case denv1.SurfaceTerminal:
 				if v.Spec.Terminal == nil || v.Spec.Terminal.Den == "" {

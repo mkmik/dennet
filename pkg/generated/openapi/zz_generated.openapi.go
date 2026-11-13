@@ -18375,6 +18375,13 @@ func schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref common.ReferenceCallback) comm
 							Format: "",
 						},
 					},
+					"beside": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Beside is the name of another Surface of the same Space that this one is glued beside, on its right: clients show the two side by side as one tab. A name that matches no such Surface glues nothing.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"kind": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Kind says what the tab shows, and which block below is set.",
