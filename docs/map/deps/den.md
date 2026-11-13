@@ -31,12 +31,6 @@ status = "todo"
 milestone = "m2"
 
 [[feature]]
-id = "lease"
-title = "Create and renew its Lease, owned by the Den"
-status = "todo"
-milestone = "m3"
-
-[[feature]]
 id = "deletion"
 title = "Treat a deletionTimestamp like DELETED: stop, write a final status"
 status = "todo"
@@ -56,5 +50,7 @@ status = "todo"
 note = "den's milestone 2"
 +++
 
-Only what dennet needs from den. den's own milestones are in the den PRD;
+Only what dennet needs from den. den doesn't need to renew a Lease: dennet
+makes Leases from den sockets, and den stops renewing when discovery lists
+no patch verb for leases. den's own milestones are in the den PRD;
 its HTTP backend (GET, watch, status PATCH, Lease) is its milestone 4.

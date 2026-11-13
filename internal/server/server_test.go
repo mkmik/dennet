@@ -114,11 +114,6 @@ func TestDenProtocol(t *testing.T) {
 		t.Fatalf("status patch after delete: want 404, got %d", code)
 	}
 
-	lease := `{"apiVersion":"coordination.k8s.io/v1","kind":"Lease","metadata":{"name":"build"},"spec":{"holderIdentity":"den","leaseDurationSeconds":30}}`
-	if code, m := do("POST", "http://dennet/apis/coordination.k8s.io/v1/namespaces/p/leases", "application/json", lease); code != 201 {
-		t.Fatalf("lease create: %d %v", code, m)
-	}
-
 	// Creating a Den made its namespace; "default" exists from the start.
 	for _, n := range []string{"p", "default"} {
 		if code, m := do("GET", "http://dennet/api/v1/namespaces/"+n, "", ""); code != 200 || m["status"].(map[string]any)["phase"] != "Active" {
@@ -327,30 +322,61 @@ func next(t *testing.T, ch <-chan event) event {
 	}
 }
 
-// fakeDen answers one history request with colors on (den's frame: u32
-// length, u8 type 7, u8 flags), with text.
-func fakeDen(t *testing.T, path, text string) {
+// fakeDen plays a den listening on path: it answers history requests with
+// text (den's frame: u32 length, u8 type 7, u8 flags), keeps idle
+// connections open, and on a shutdown frame (type 11) stops. stop closes
+// the listener and every connection, as a den exiting does.
+func fakeDen(t *testing.T, path, text string) (stop func(), shutdown <-chan struct{}) {
 	t.Helper()
+	os.MkdirAll(filepath.Dir(path), 0o700)
 	ln, err := net.Listen("unix", path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { ln.Close() })
+	var mu sync.Mutex
+	var conns []net.Conn
+	stop = sync.OnceFunc(func() {
+		ln.Close()
+		mu.Lock()
+		defer mu.Unlock()
+		for _, c := range conns {
+			c.Close()
+		}
+	})
+	t.Cleanup(stop)
+	down := make(chan struct{})
 	go func() {
-		conn, err := ln.Accept()
-		ln.Close() // then gone, as far as deleting its Den is concerned
-		if err != nil {
-			return
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			mu.Lock()
+			conns = append(conns, conn)
+			mu.Unlock()
+			go func() {
+				hdr := make([]byte, 5)
+				if _, err := io.ReadFull(conn, hdr); err != nil {
+					return // dennet's lease connection, closed
+				}
+				switch string(hdr) {
+				case "\x02\x00\x00\x00\x07":
+					flags := make([]byte, 1)
+					if _, err := io.ReadFull(conn, flags); err != nil || flags[0] != 1 {
+						t.Errorf("history request: flags %q %v", flags, err)
+					}
+					conn.Write(binary.LittleEndian.AppendUint32(nil, uint32(1+len(text))))
+					conn.Write(append([]byte{7}, text...))
+				case "\x01\x00\x00\x00\x0b":
+					stop()
+					close(down)
+				default:
+					t.Errorf("unexpected frame %q", hdr)
+				}
+			}()
 		}
-		defer conn.Close()
-		req := make([]byte, 6)
-		if _, err := io.ReadFull(conn, req); err != nil || string(req) != "\x02\x00\x00\x00\x07\x01" {
-			t.Errorf("history request: %q %v", req, err)
-			return
-		}
-		conn.Write(binary.LittleEndian.AppendUint32(nil, uint32(1+len(text))))
-		conn.Write(append([]byte{7}, text...))
 	}()
+	return stop, down
 }
 
 // TestHost checks that a namespace named like a Host is the default
