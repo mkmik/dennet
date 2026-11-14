@@ -1,6 +1,6 @@
 +++
 title = "Lease"
-summary = "coordination.k8s.io/v1 Lease, one per Den whose den's socket dennet holds open: liveness without writes"
+summary = "coordination.k8s.io/v1 Lease, one per Den whose den socket is open: liveness without writes"
 kind = "code"
 intent = "induced"
 research = "done"
