@@ -13,8 +13,6 @@ import (
 	"strings"
 	"time"
 
-	coordinationv1 "k8s.io/api/coordination/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -27,37 +25,30 @@ import (
 )
 
 // denTerm is how long dennet leaves a Den it acted on before acting on it
-// again, and how long a den has to renew its Lease after dennet starts. It
-// matches the leaseDurationSeconds den writes.
+// again: a den it just started takes a moment to open its socket.
 const denTerm = 30 * time.Second
 
 // runDens runs dennet's den controller until ctx is cancelled:
 //   - it starts a den (den apply -f <the Den's URL>) for every Den on this
-//     host that no den holds the Lease of, unless den is empty. den reads its
-//     spec from dennet's socket, reports status and renews its Lease there,
-//     and goes into the background on its own.
+//     host whose den isn't connected to leases, unless den is empty. den
+//     reads its spec from dennet's socket, reports status there, and goes
+//     into the background on its own.
 //   - for a Den being deleted, it shuts its den down over the den's socket,
-//     then removes the Den's finalizer and deletes its Lease.
-func runDens(ctx context.Context, den, socket string) {
-	denClient, leaseClient := localClient(socket, denv1.SchemeGroupVersion), localClient(socket, coordinationv1.SchemeGroupVersion)
+//     then removes the Den's finalizer.
+//
+// It connects to every den once before acting at all, so after a restart
+// running dens are found, not started again.
+func runDens(ctx context.Context, den, socket string, leases *registry.Leases) {
+	denClient := localClient(socket, denv1.SchemeGroupVersion)
 	dens := inform(denClient, "dens", &denv1.Den{})
-	leases := inform(leaseClient, "leases", &coordinationv1.Lease{})
-	leaseOf := func(d *denv1.Den) *coordinationv1.Lease {
-		l, _, _ := leases.GetStore().GetByKey(d.Namespace + "/" + d.Name)
-		lease, _ := l.(*coordinationv1.Lease)
-		return lease
-	}
-
 	kick := kicker(dens)
 	go dens.Run(ctx.Done())
-	go leases.Run(ctx.Done())
-	if !cache.WaitForCacheSync(ctx.Done(), dens.HasSynced, leases.HasSynced) {
+	if !cache.WaitForCacheSync(ctx.Done(), dens.HasSynced) {
 		return
 	}
 
-	since := time.Now()
 	spawned, stopping := map[types.UID]time.Time{}, map[types.UID]time.Time{}
-	// Lease expiry is no event, so look again now and then.
+	// Retry dens that weren't listening now and then.
 	tick := time.NewTicker(5 * time.Second)
 	defer tick.Stop()
 	for {
@@ -65,20 +56,24 @@ func runDens(ctx context.Context, den, socket string) {
 		old := func(_ types.UID, t time.Time) bool { return now.Sub(t) >= denTerm }
 		maps.DeleteFunc(spawned, old)
 		maps.DeleteFunc(stopping, old)
+		var all []*denv1.Den
 		for _, obj := range dens.GetStore().List() {
-			d := obj.(*denv1.Den)
+			all = append(all, obj.(*denv1.Den))
+		}
+		leases.Sync(all)
+		for _, d := range all {
 			switch {
 			case d.DeletionTimestamp != nil:
 				if _, ok := stopping[d.UID]; !ok && slices.Contains(d.Finalizers, denv1.DenFinalizer) {
 					stopping[d.UID] = now
 					go func() {
-						if stopDen(d) || !held(d, leaseOf(d), since, time.Now()) {
-							release(ctx, denClient, leaseClient, d, leaseOf(d))
+						if stopDen(d) || !leases.Held(d) {
+							release(ctx, denClient, d)
 						}
 					}()
 				}
 			case den != "":
-				if _, ok := spawned[d.UID]; !ok && needsDen(d, leaseOf(d), since, now) {
+				if _, ok := spawned[d.UID]; !ok && needsDen(d, leases.Held(d)) {
 					spawned[d.UID] = now
 					go startDen(den, socket, d.Namespace, d.Name)
 				}
@@ -88,6 +83,7 @@ func runDens(ctx context.Context, den, socket string) {
 		case <-ctx.Done():
 			return
 		case <-kick:
+		case <-leases.Kick:
 		case <-tick.C:
 		}
 	}
@@ -136,8 +132,8 @@ func kicker(informers ...cache.SharedIndexInformer) <-chan struct{} {
 }
 
 // needsDen says whether d should get a den: it hasn't finished or isn't
-// going away, and no den holds its Lease.
-func needsDen(d *denv1.Den, l *coordinationv1.Lease, since, now time.Time) bool {
+// going away, and its den isn't connected (held).
+func needsDen(d *denv1.Den, held bool) bool {
 	// ponytail: a non-empty spec.hostName is never this host; Hosts' dens
 	// live in their namespaces and are their own dennet's to start.
 	if d.DeletionTimestamp != nil || d.Spec.HostName != "" {
@@ -147,26 +143,7 @@ func needsDen(d *denv1.Den, l *coordinationv1.Lease, since, now time.Time) bool 
 	case denv1.DenExited, denv1.DenFailed:
 		return false
 	}
-	return !held(d, l, since, now)
-}
-
-// held says whether a den of d renewed its Lease l within the Lease's
-// duration. The clock starts no earlier than since, when dennet started, so
-// dens that kept running through a dennet restart get a full term to renew.
-func held(d *denv1.Den, l *coordinationv1.Lease, since, now time.Time) bool {
-	if l == nil || l.Spec.RenewTime == nil || l.Spec.LeaseDurationSeconds == nil {
-		return false
-	}
-	for _, o := range l.OwnerReferences {
-		if o.UID != d.UID {
-			return false // left by an earlier Den of the same name
-		}
-	}
-	renewed := l.Spec.RenewTime.Time
-	if renewed.Before(since) {
-		renewed = since
-	}
-	return !now.After(renewed.Add(time.Duration(*l.Spec.LeaseDurationSeconds) * time.Second))
+	return !held
 }
 
 // startDen runs den apply, which returns once den is in the background. A
@@ -203,25 +180,14 @@ func stopDen(d *denv1.Den) bool {
 	return true
 }
 
-// release removes the finalizer from d, so the Den goes away, and deletes
-// the Lease its den held. The patch tests that the finalizer is still where
-// d had it, so other changes (den's final status) don't get in the way.
-func release(ctx context.Context, dens, leases *restclient.RESTClient, d *denv1.Den, l *coordinationv1.Lease) {
+// release removes the finalizer from d, so the Den goes away. The patch
+// tests that the finalizer is still where d had it, so other changes (den's
+// final status) don't get in the way.
+func release(ctx context.Context, dens *restclient.RESTClient, d *denv1.Den) {
 	at := fmt.Sprintf("/metadata/finalizers/%d", slices.Index(d.Finalizers, denv1.DenFinalizer))
 	patch, _ := json.Marshal([]map[string]string{{"op": "test", "path": at, "value": denv1.DenFinalizer}, {"op": "remove", "path": at}})
 	err := dens.Patch(types.JSONPatchType).Namespace(d.Namespace).Resource("dens").Name(d.Name).Body(patch).Do(ctx).Error()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "dennet: releasing Den %s/%s: %v\n", d.Namespace, d.Name, err)
-		return
-	}
-	if l == nil || !slices.ContainsFunc(l.OwnerReferences, func(o metav1.OwnerReference) bool { return o.UID == d.UID }) {
-		return
-	}
-	// ponytail: dennet has no garbage collector; this is the only place a
-	// Lease owned by a Den goes away.
-	err = leases.Delete().Namespace(l.Namespace).Resource("leases").Name(l.Name).
-		Body(&metav1.DeleteOptions{Preconditions: &metav1.Preconditions{UID: &l.UID}}).Do(ctx).Error()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "dennet: deleting Lease %s/%s: %v\n", l.Namespace, l.Name, err)
 	}
 }

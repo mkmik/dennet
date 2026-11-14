@@ -1,6 +1,6 @@
 +++
 title = "Cleanup"
-summary = "Deletes Exited Dens, and their Leases, once history.keepAfterExit has passed"
+summary = "Deletes Exited Dens once history.keepAfterExit has passed"
 kind = "code"
 intent = "induced"
 research = "done"

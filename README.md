@@ -3,7 +3,9 @@
 dennet is one Go binary that serves a Kubernetes-style API for den
 sessions. It defines `Den` in
 `den.mkm.pub/v1alpha1`, and also serves `coordination.k8s.io/v1` `Lease`,
-which dens renew to show they are alive. `kubectl` and client-go work with it
+one for each Den whose den is running. Leases are read-only: dennet keeps a
+connection open to each den's control socket, and a Den has a Lease while
+that connection is open. `kubectl` and client-go work with it
 unchanged.
 
 It also serves `v1` `Namespace`. The `default` namespace always exists, and
@@ -52,27 +54,33 @@ where they go; the client commands take the same flags.
 ## Starting and stopping dens
 
 dennet starts a den for every Den that has none: when the Den is created,
-and again whenever its Lease expires (den was killed, or the machine
-rebooted). It runs
+and again whenever the den's socket closes (den exited, was killed, or the
+machine rebooted). It runs
 
 ```sh
 den apply -f http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/NS/dens/NAME --unix-socket <dennet socket>
 ```
 
-so den reads its spec from dennet, reports its status and renews its Lease
-there, and goes into the background on its own. den is found on `PATH`;
+so den reads its spec from dennet, reports its status there, and goes into the background on its own. den is found on `PATH`;
 `--den PATH` names another binary, and `--den=` starts none. Dens in phase
 `Exited` or `Failed`, being deleted, or with a `spec.hostName` are left
-alone. After dennet restarts, running dens get a full Lease term (30 s) to
-renew before dennet starts another; den also refuses to start a second time
-for the same Den.
+alone. After dennet restarts, it connects to every den's socket before it
+starts any den or answers any Lease read, so dens that kept running are
+found, not started again; den also refuses to start a second time for the
+same Den.
+
+dennet sends nothing on these connections, and den only counts a client
+once it attaches, so they don't change terminal sizes or attached counts.
+Two things this doesn't catch: a hung den whose socket is still open counts
+as alive, and dens on other machines are their own dennet's (dennet only
+connects to dens on this host).
 
 Deleting a Den stops its den. Every Den gets the finalizer `den.mkm.pub/den`,
 so it stays while dennet asks the den to shut down over the den's socket,
 as `den delete` does: den stops the program (SIGHUP, then SIGKILL after
-5 s), writes a final status and exits. Then dennet removes the finalizer and
-deletes the den's Lease. A Den whose den isn't running goes right away; one
-whose den doesn't stop goes once its Lease has expired. This works with
+5 s), writes a final status and exits. Then dennet removes the finalizer. A Den
+whose den isn't running goes right away; one whose den doesn't stop goes
+once its socket closes. This works with
 `--den=` too.
 
 ## Archiving Spaces

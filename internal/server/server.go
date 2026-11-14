@@ -111,7 +111,8 @@ func Run(ctx context.Context, o Options) error {
 	defer closeEtcd()
 	fmt.Fprintf(os.Stderr, "dennet: storing objects in %s (stop dennet and delete it to start from nothing)\n", etcd.Config().Dir)
 
-	srv, err := newAPIServer(token, o.Socket, etcdURL)
+	leases := registry.NewLeases()
+	srv, err := newAPIServer(token, o.Socket, etcdURL, leases)
 	if err != nil {
 		unixLn.Close()
 		return err
@@ -152,7 +153,7 @@ func Run(ctx context.Context, o Options) error {
 	// (its listener-stopped channel is nil), so nothing waits for it and its
 	// deferred Destroy never runs; Run calls Destroy itself.
 	go func() { errc <- prepared.RunWithContext(ctx) }()
-	go runDens(ctx, o.Den, o.Socket)
+	go runDens(ctx, o.Den, o.Socket, leases)
 	go runArchive(ctx, o.Socket)
 
 	select {
@@ -207,7 +208,7 @@ func serve(err error) error {
 	return err
 }
 
-func newAPIServer(token, socket, etcdURL string) (*genericapiserver.GenericAPIServer, error) {
+func newAPIServer(token, socket, etcdURL string, leases *registry.Leases) (*genericapiserver.GenericAPIServer, error) {
 	optsFor := func(gv schema.GroupVersion) generic.RESTOptionsGetter {
 		cfg := storagebackend.NewDefaultConfig("/registry", Codecs.LegacyCodec(gv))
 		cfg.Transport.ServerList = []string{etcdURL}
@@ -265,10 +266,6 @@ func newAPIServer(token, socket, etcdURL string) (*genericapiserver.GenericAPISe
 	if err != nil {
 		return nil, err
 	}
-	lease, err := registry.NewLease(Scheme, optsFor(coordinationv1.SchemeGroupVersion))
-	if err != nil {
-		return nil, err
-	}
 
 	denGroup := genericapiserver.NewDefaultAPIGroupInfo(denv1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 	denGroup.VersionedResourcesStorageMap[denv1.SchemeGroupVersion.Version] = map[string]rest.Storage{
@@ -282,7 +279,7 @@ func newAPIServer(token, socket, etcdURL string) (*genericapiserver.GenericAPISe
 	}
 	leaseGroup := genericapiserver.NewDefaultAPIGroupInfo(coordinationv1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 	leaseGroup.VersionedResourcesStorageMap[coordinationv1.SchemeGroupVersion.Version] = map[string]rest.Storage{
-		"leases": lease,
+		"leases": leases,
 	}
 	if err := srv.InstallAPIGroups(&denGroup, &leaseGroup); err != nil {
 		return nil, err

@@ -82,7 +82,7 @@ const (
 	DenRunning DenPhase = "Running"
 	DenExited  DenPhase = "Exited"
 	DenFailed  DenPhase = "Failed"
-	// DenLost is set by dennet when the den's Lease expires.
+	// DenLost is set by dennet when the den's socket closes.
 	DenLost DenPhase = "Lost"
 )
 
