@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -157,8 +158,18 @@ func NewSurface(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*reg
 				} else {
 					errs = append(errs, validRef(p.Child("terminal", "den"), v.Spec.Terminal.Den)...)
 				}
+			case denv1.SurfaceWeb:
+				w := v.Spec.Web
+				switch {
+				case w == nil || (w.URL == "") == (w.HTML == ""):
+					errs = append(errs, field.Required(p.Child("web"), "kind is web: set exactly one of url and html"))
+				case w.URL != "":
+					if u, err := url.Parse(w.URL); err != nil || !u.IsAbs() {
+						errs = append(errs, field.Invalid(p.Child("web", "url"), w.URL, "must be an absolute URL"))
+					}
+				}
 			default:
-				errs = append(errs, field.NotSupported(p.Child("kind"), v.Spec.Kind, []denv1.SurfaceKind{denv1.SurfaceTerminal}))
+				errs = append(errs, field.NotSupported(p.Child("kind"), v.Spec.Kind, []denv1.SurfaceKind{denv1.SurfaceTerminal, denv1.SurfaceWeb}))
 			}
 			return errs
 		})
