@@ -1,6 +1,6 @@
 +++
 title = "Surface"
-summary = "One tab inside a Space; kind terminal points at a Den"
+summary = "One tab inside a Space; kind terminal points at a Den, kind web shows a page"
 aka = ["surfaces"]
 kind = "code"
 intent = "goal"
@@ -11,6 +11,12 @@ refs = ["pkg/apis/den/v1alpha1/types.go", "internal/registry/space.go"]
 id = "terminal"
 title = "Kind terminal: a tab that attaches to a Den"
 status = "done"
+
+[[feature]]
+id = "web"
+title = "Kind web: a tab that shows one page, or a browser with navigation"
+status = "done"
+note = "spec.web has url or html, and navigation; dennet checks only that exactly one is set and the url is absolute"
 
 [[feature]]
 id = "glue"
@@ -27,8 +33,12 @@ on = "/api/den"
 why = "A terminal Surface attaches to a Den"
 +++
 
-From the dense PRD. Only kind terminal exists; later kinds (browser,
-diff, notes) each add their own block next to terminal.
+From the dense PRD. Each kind has its own block next to kind: terminal
+names a Den, web names a page (a URL, or the HTML itself). A web tab
+shows only that page, or with navigation it is a small browser. An
+agent can show an artifact with an html web tab glued beside its
+terminal, and change the html to update it. Later kinds (diff, notes)
+add their own blocks.
 
 A Surface can be glued beside another Surface of its Space: dense then
 shows the two as one combo tab, side by side, with fused handles (dense's

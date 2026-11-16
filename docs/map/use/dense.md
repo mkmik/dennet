@@ -23,6 +23,10 @@ on = "/api/surface#glue"
 why = "Shows two Surfaces glued side by side as one combo tab"
 
 [[needs]]
+on = "/api/surface#web"
+why = "Shows web pages and a browser in tabs"
+
+[[needs]]
 on = "/controllers/archive"
 why = "Hides archived Spaces and offers to reopen them"
 

@@ -202,15 +202,33 @@ type SurfaceSpec struct {
 	// Kind says what the tab shows, and which block below is set.
 	Kind     SurfaceKind      `json:"kind"`
 	Terminal *TerminalSurface `json:"terminal,omitempty"`
+	Web      *WebSurface      `json:"web,omitempty"`
 }
 
 type SurfaceKind string
 
-const SurfaceTerminal SurfaceKind = "terminal"
+const (
+	SurfaceTerminal SurfaceKind = "terminal"
+	SurfaceWeb      SurfaceKind = "web"
+)
 
 type TerminalSurface struct {
 	// Den is the name of the Den to attach to, in the same namespace.
 	Den string `json:"den"`
+}
+
+// WebSurface is a tab that shows a web page. Exactly one of URL and HTML is set.
+type WebSurface struct {
+	// URL is the page to show. A file:// URL names a file on the machine of
+	// the client that shows the tab.
+	URL string `json:"url,omitempty"`
+	// HTML is the page itself, shown instead of a URL. A client shows it
+	// again each time it changes.
+	HTML string `json:"html,omitempty"`
+	// Navigation makes the tab a browser: links open in it, and it has
+	// back, forward, reload and an address field. Without it the tab shows
+	// only this page, and links open in the default browser.
+	Navigation bool `json:"navigation,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

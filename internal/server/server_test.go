@@ -155,6 +155,11 @@ func TestSpacesAndSurfaces(t *testing.T) {
 		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","beside":"x","kind":"terminal","terminal":{"den":"x"}}}`, 422},
 		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","kind":"terminal"}}`, 422},
 		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","kind":"browser"}}`, 422},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m-page"},"spec":{"space":"m","kind":"web","web":{"html":"<h1>hi</h1>"}}}`, 201},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m-browser"},"spec":{"space":"m","kind":"web","web":{"url":"https://example.com","navigation":true}}}`, 201},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","kind":"web"}}`, 422},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","kind":"web","web":{"url":"https://example.com","html":"<p>"}}}`, 422},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","kind":"web","web":{"url":"example.com"}}}`, 422},
 		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"kind":"terminal","terminal":{"den":"d"}}}`, 422},
 	} {
 		if got := post(tc.res, tc.body); got != tc.want {

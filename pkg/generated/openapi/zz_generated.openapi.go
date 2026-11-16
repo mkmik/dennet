@@ -345,6 +345,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		v1alpha1.SurfaceList{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_SurfaceList(ref),
 		v1alpha1.SurfaceSpec{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref),
 		v1alpha1.TerminalSurface{}.OpenAPIModelName():                  schema_pkg_apis_den_v1alpha1_TerminalSurface(ref),
+		v1alpha1.WebSurface{}.OpenAPIModelName():                       schema_pkg_apis_den_v1alpha1_WebSurface(ref),
 	}
 }
 
@@ -18395,12 +18396,17 @@ func schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref common.ReferenceCallback) comm
 							Ref: ref(v1alpha1.TerminalSurface{}.OpenAPIModelName()),
 						},
 					},
+					"web": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref(v1alpha1.WebSurface{}.OpenAPIModelName()),
+						},
+					},
 				},
 				Required: []string{"space", "kind"},
 			},
 		},
 		Dependencies: []string{
-			v1alpha1.TerminalSurface{}.OpenAPIModelName()},
+			v1alpha1.TerminalSurface{}.OpenAPIModelName(), v1alpha1.WebSurface{}.OpenAPIModelName()},
 	}
 }
 
@@ -18420,6 +18426,40 @@ func schema_pkg_apis_den_v1alpha1_TerminalSurface(ref common.ReferenceCallback) 
 					},
 				},
 				Required: []string{"den"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_WebSurface(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "WebSurface is a tab that shows a web page. Exactly one of URL and HTML is set.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"url": {
+						SchemaProps: spec.SchemaProps{
+							Description: "URL is the page to show. A file:// URL names a file on the machine of the client that shows the tab.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"html": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HTML is the page itself, shown instead of a URL. A client shows it again each time it changes.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"navigation": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Navigation makes the tab a browser: links open in it, and it has back, forward, reload and an address field. Without it the tab shows only this page, and links open in the default browser.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
 			},
 		},
 	}

@@ -106,3 +106,8 @@ func (in SurfaceSpec) OpenAPIModelName() string {
 func (in TerminalSurface) OpenAPIModelName() string {
 	return "pub.mkm.den.v1alpha1.TerminalSurface"
 }
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in WebSurface) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.WebSurface"
+}
