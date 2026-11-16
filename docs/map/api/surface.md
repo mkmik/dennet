@@ -24,6 +24,13 @@ title = "Glue a Surface beside another of its Space, for dense's combo tabs"
 status = "done"
 note = "spec.beside names the Surface it sits right of; dennet checks only that it isn't itself"
 
+[[feature]]
+id = "glue-width"
+title = "Keep how wide a glued Surface is beside the other, for dense's combo tabs"
+status = "done"
+note = "spec.width, in percent; 0 means half"
+needs = ["#glue"]
+
 [[needs]]
 on = "/api/space"
 why = "Every Surface belongs to a Space"
@@ -45,4 +52,6 @@ shows the two as one combo tab, side by side, with fused handles (dense's
 t8y:/tabs/combo). The bond is spec.beside on the glued Surface, kept here like
 order and title, so every client and window sees the same combos. A bond
 naming a Surface that has gone counts as none, so deleting a Surface needs
-no cleanup. Not called attach: that is den's attach subresource.
+no cleanup. Not called attach: that is den's attach subresource. How wide
+the glued Surface is, dragged in dense, is spec.width next to it, in
+percent, so it is kept with the bond. dense clears it on a new bond.

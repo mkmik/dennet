@@ -18383,6 +18383,13 @@ func schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref common.ReferenceCallback) comm
 							Format:      "",
 						},
 					},
+					"width": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Width is how much of the width of the two glued Surfaces this one takes, in percent, from 1 to 99, when it is glued beside another; 0 means half. Clients set it when the line between the two is dragged.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
 					"kind": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Kind says what the tab shows, and which block below is set.",

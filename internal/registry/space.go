@@ -151,6 +151,9 @@ func NewSurface(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*reg
 			if v.Spec.Beside != "" && v.Spec.Beside == v.Name {
 				errs = append(errs, field.Invalid(p.Child("beside"), v.Spec.Beside, "a surface cannot be beside itself"))
 			}
+			if v.Spec.Width < 0 || v.Spec.Width > 99 {
+				errs = append(errs, field.Invalid(p.Child("width"), v.Spec.Width, "must be from 1 to 99, or 0 for half"))
+			}
 			switch v.Spec.Kind {
 			case denv1.SurfaceTerminal:
 				if v.Spec.Terminal == nil || v.Spec.Terminal.Den == "" {
