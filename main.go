@@ -10,11 +10,14 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/genericiooptions"
 	"k8s.io/cli-runtime/pkg/resource"
@@ -70,10 +73,98 @@ func main() {
 		IOStreams:   genericiooptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr},
 	})
 	os.Setenv("PATH", path)
+	// denClient talks to the den.mkm.pub API with dennet's own types.
+	denClient := func() (*rest.RESTClient, error) {
+		cfg, err := flags.ToRESTConfig()
+		if err != nil {
+			return nil, err
+		}
+		cfg.APIPath, cfg.GroupVersion = "/apis", &denv1.SchemeGroupVersion
+		cfg.NegotiatedSerializer = server.Codecs.WithoutConversion()
+		return rest.RESTClientFor(cfg)
+	}
+	// surfaceOf is the terminal Surface that shows the den, or nil.
+	// ponytail: lists the namespace's Surfaces on each call; cache per
+	// namespace if get dens -o space on many dens gets slow.
+	surfaceOf := func(ctx context.Context, ns, den string) (*denv1.Surface, error) {
+		c, err := denClient()
+		if err != nil {
+			return nil, err
+		}
+		var l denv1.SurfaceList
+		if err := c.Get().Namespace(ns).Resource("surfaces").Do(ctx).Into(&l); err != nil {
+			return nil, err
+		}
+		for _, s := range l.Items {
+			if s.Spec.Terminal != nil && s.Spec.Terminal.Den == den {
+				return &s, nil
+			}
+		}
+		return nil, nil
+	}
+	// Inside a den, @ names the den this command runs in, like $WEZTERM_PANE
+	// for wezterm cli: den @, surface @ (the Surface showing it) and space @
+	// (that Surface's Space), also as den/@, and logs @. $DEN_SOCKET is
+	// <dir>/<namespace>/<den>.sock (socketPath in den). Each @ is replaced in
+	// args itself: cobra hands the same slice to Run.
+	self := func(cmd *cobra.Command, args []string) error {
+		for i, a := range args {
+			typ, name, slash := strings.Cut(a, "/")
+			if !slash {
+				typ, name = "", a
+				if i > 0 {
+					typ = args[i-1]
+				} else if cmd.Name() == "logs" {
+					typ = "den"
+				}
+			}
+			if name != "@" {
+				continue
+			}
+			sock := os.Getenv("DEN_SOCKET")
+			if sock == "" {
+				return fmt.Errorf("@ is the den this runs in, but $DEN_SOCKET is not set")
+			}
+			ns, den := filepath.Base(filepath.Dir(sock)), strings.TrimSuffix(filepath.Base(sock), ".sock")
+			if f := cmd.Flag("namespace"); f != nil && f.Changed && f.Value.String() != ns {
+				return fmt.Errorf("@ is in namespace %s, not %s", ns, f.Value.String())
+			}
+			*flags.Namespace = ns
+			m, err := flags.ToRESTMapper()
+			if err != nil {
+				return err
+			}
+			gvr, err := m.ResourceFor(schema.ParseGroupResource(typ).WithVersion(""))
+			if err != nil || gvr.Group != denv1.GroupName || !slices.Contains([]string{"dens", "surfaces", "spaces"}, gvr.Resource) {
+				return fmt.Errorf("@ needs a type before it: den, surface or space")
+			}
+			v := den
+			if gvr.Resource != "dens" {
+				s, err := surfaceOf(cmd.Context(), ns, den)
+				if err != nil {
+					return err
+				}
+				if s == nil {
+					return fmt.Errorf("no Surface shows den %s/%s", ns, den)
+				}
+				v = s.Name
+				if gvr.Resource == "spaces" {
+					v = s.Spec.Space
+				}
+			}
+			if slash {
+				v = typ + "/" + v
+			}
+			args[i] = v
+		}
+		return nil
+	}
 	pre := root.PersistentPreRunE
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if cmd.Name() == cobra.ShellCompRequestCmd {
 			os.Setenv("PATH", "")
+		} else if err := self(cmd, args); err != nil {
+			return err
 		}
 		return pre(cmd, args)
 	}
@@ -120,13 +211,7 @@ func main() {
 			if err != nil {
 				return err
 			}
-			cfg, err := flags.ToRESTConfig()
-			if err != nil {
-				return err
-			}
-			cfg.APIPath, cfg.GroupVersion = "/apis", &denv1.SchemeGroupVersion
-			cfg.NegotiatedSerializer = server.Codecs.WithoutConversion()
-			c, err := rest.RESTClientFor(cfg)
+			c, err := denClient()
 			if err != nil {
 				return err
 			}
@@ -152,10 +237,14 @@ func main() {
 	// get -o url prints each object's API URL, e.g.
 	// http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/default/dens/example.
 	// kubectl's printers can't: no object field holds the plural resource.
+	// get -o space prints each object's Space name, as -o name prints its
+	// name: a Space's own, a Surface's spec.space, and for a Den the Space of
+	// the Surface showing it.
 	if get, _, err := root.Find([]string{"get"}); err == nil && get != root {
 		run := get.Run
 		get.Run = func(cmd *cobra.Command, args []string) {
-			if cmd.Flag("output").Value.String() != "url" {
+			out := cmd.Flag("output").Value.String()
+			if out != "url" && out != "space" {
 				run(cmd, args)
 				return
 			}
@@ -172,8 +261,30 @@ func main() {
 				LabelSelectorParam(sel).ResourceTypeOrNameArgs(true, args...).
 				ContinueOnError().Latest().Flatten().Do().Infos()
 			for _, i := range infos {
-				fmt.Fprintln(cmd.OutOrStdout(), i.Client.Get().NamespaceIfScoped(i.Namespace, i.Namespaced()).
-					Resource(i.Mapping.Resource.Resource).Name(i.Name).URL())
+				if out == "url" {
+					fmt.Fprintln(cmd.OutOrStdout(), i.Client.Get().NamespaceIfScoped(i.Namespace, i.Namespaced()).
+						Resource(i.Mapping.Resource.Resource).Name(i.Name).URL())
+					continue
+				}
+				space := ""
+				switch r := i.Mapping.Resource; {
+				case r.Group != denv1.GroupName:
+					cmdutil.CheckErr(fmt.Errorf("%s %s has no Space", r.Resource, i.Name))
+				case r.Resource == "spaces":
+					space = i.Name
+				case r.Resource == "surfaces":
+					space, _, _ = unstructured.NestedString(i.Object.(*unstructured.Unstructured).Object, "spec", "space")
+				case r.Resource == "dens":
+					s, err := surfaceOf(cmd.Context(), i.Namespace, i.Name)
+					cmdutil.CheckErr(err)
+					if s == nil {
+						cmdutil.CheckErr(fmt.Errorf("no Surface shows den %s/%s", i.Namespace, i.Name))
+					}
+					space = s.Spec.Space
+				default:
+					cmdutil.CheckErr(fmt.Errorf("%s %s has no Space", r.Resource, i.Name))
+				}
+				fmt.Fprintln(cmd.OutOrStdout(), space)
 			}
 			cmdutil.CheckErr(err)
 		}
