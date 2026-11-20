@@ -38,6 +38,26 @@ func (in EnvVar) OpenAPIModelName() string {
 }
 
 // OpenAPIModelName returns the OpenAPI model name for this type.
+func (in Extension) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.Extension"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in ExtensionList) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.ExtensionList"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in ExtensionSpec) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.ExtensionSpec"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in ExtensionStatus) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.ExtensionStatus"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
 func (in HistorySpec) OpenAPIModelName() string {
 	return "pub.mkm.den.v1alpha1.HistorySpec"
 }
@@ -105,6 +125,11 @@ func (in SurfaceSpec) OpenAPIModelName() string {
 // OpenAPIModelName returns the OpenAPI model name for this type.
 func (in TerminalSurface) OpenAPIModelName() string {
 	return "pub.mkm.den.v1alpha1.TerminalSurface"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in UISurface) OpenAPIModelName() string {
+	return "pub.mkm.den.v1alpha1.UISurface"
 }
 
 // OpenAPIModelName returns the OpenAPI model name for this type.

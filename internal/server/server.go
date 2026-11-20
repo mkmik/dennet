@@ -155,6 +155,7 @@ func Run(ctx context.Context, o Options) error {
 	go func() { errc <- prepared.RunWithContext(ctx) }()
 	go runDens(ctx, o.Den, o.Socket, leases)
 	go runArchive(ctx, o.Socket)
+	go runExtensions(ctx, o.Socket)
 
 	select {
 	case err = <-errc:
@@ -266,16 +267,22 @@ func newAPIServer(token, socket, etcdURL string, leases *registry.Leases) (*gene
 	if err != nil {
 		return nil, err
 	}
+	extension, extensionStatus, err := registry.NewExtension(Scheme, optsFor(denv1.SchemeGroupVersion))
+	if err != nil {
+		return nil, err
+	}
 
 	denGroup := genericapiserver.NewDefaultAPIGroupInfo(denv1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 	denGroup.VersionedResourcesStorageMap[denv1.SchemeGroupVersion.Version] = map[string]rest.Storage{
-		"dens":          den,
-		"dens/status":   denStatus,
-		"dens/log":      registry.NewDenLog(den),
-		"spaces":        space,
-		"spaces/status": spaceStatus,
-		"surfaces":      surface,
-		"hosts":         hosts,
+		"dens":              den,
+		"dens/status":       denStatus,
+		"dens/log":          registry.NewDenLog(den),
+		"spaces":            space,
+		"spaces/status":     spaceStatus,
+		"surfaces":          surface,
+		"hosts":             hosts,
+		"extensions":        extension,
+		"extensions/status": extensionStatus,
 	}
 	leaseGroup := genericapiserver.NewDefaultAPIGroupInfo(coordinationv1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 	leaseGroup.VersionedResourcesStorageMap[coordinationv1.SchemeGroupVersion.Version] = map[string]rest.Storage{

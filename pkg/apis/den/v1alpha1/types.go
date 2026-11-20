@@ -192,24 +192,40 @@ type Surface struct {
 type SurfaceSpec struct {
 	// Space is the name of the Space this tab belongs to, in the same namespace.
 	Space string `json:"space"`
-	// Order is the position among the space's tabs, lowest first.
+	// Order is the position among the space's tabs, or among its sidebar
+	// sections, lowest first.
 	Order int32  `json:"order,omitempty"`
 	Title string `json:"title,omitempty"`
 	// Beside is the name of another Surface of the same Space that this one is
 	// glued beside, on its right: clients show the two side by side as one tab.
 	// A name that matches no such Surface glues nothing.
 	Beside string `json:"beside,omitempty"`
+	// Placement is where clients show it: a tab when empty, or with sidebar
+	// a section of the Space's part of the sidebar. One in the sidebar is
+	// glued to nothing: it cannot be beside another, and one beside it
+	// glues nothing.
+	Placement SurfacePlacement `json:"placement,omitempty"`
 	// Kind says what the tab shows, and which block below is set.
 	Kind     SurfaceKind      `json:"kind"`
 	Terminal *TerminalSurface `json:"terminal,omitempty"`
 	Web      *WebSurface      `json:"web,omitempty"`
+	UI       *UISurface       `json:"ui,omitempty"`
 }
+
+type SurfacePlacement string
+
+const (
+	SurfaceTab     SurfacePlacement = ""
+	SurfaceSidebar SurfacePlacement = "sidebar"
+)
 
 type SurfaceKind string
 
 const (
 	SurfaceTerminal SurfaceKind = "terminal"
 	SurfaceWeb      SurfaceKind = "web"
+	// SurfaceUI is a tab drawn by an Extension, with A2UI.
+	SurfaceUI SurfaceKind = "ui"
 )
 
 type TerminalSurface struct {
@@ -229,6 +245,14 @@ type WebSurface struct {
 	// back, forward, reload and an address field. Without it the tab shows
 	// only this page, and links open in the default browser.
 	Navigation bool `json:"navigation,omitempty"`
+}
+
+// UISurface is a Surface whose content an Extension draws: a client connects
+// to the Extension's endpoint and asks for the A2UI surface whose surfaceId
+// is the Surface's name.
+type UISurface struct {
+	// Extension is the name of the Extension, in the same namespace.
+	Extension string `json:"extension"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -272,4 +296,50 @@ type HostList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Host `json:"items"`
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// Extension is a long-running program that shows its own UI in clients
+// such as dense, in Surfaces of kind ui: for example ccwt. The program
+// creates its Extension and listens on spec.endpoint; clients connect there
+// and speak A2UI 1.0 for every Surface of kind ui that names it.
+type Extension struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ExtensionSpec   `json:"spec,omitempty"`
+	Status ExtensionStatus `json:"status,omitempty"`
+}
+
+type ExtensionSpec struct {
+	// Endpoint is the absolute path of the Unix socket the program listens
+	// on, on the machine dennet runs on.
+	Endpoint string `json:"endpoint"`
+}
+
+// ExtensionStatus is written only by dennet, on extensions/status. dennet
+// keeps a connection open to the endpoint: while it is open the Extension
+// is Connected. One Disconnected for 10 minutes is deleted, and with it the
+// Surfaces it owns.
+type ExtensionStatus struct {
+	Phase ExtensionPhase `json:"phase,omitempty"`
+	// Since is when the phase last changed.
+	Since *metav1.Time `json:"since,omitempty"`
+}
+
+type ExtensionPhase string
+
+const (
+	ExtensionConnected    ExtensionPhase = "Connected"
+	ExtensionDisconnected ExtensionPhase = "Disconnected"
+)
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type ExtensionList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Extension `json:"items"`
 }

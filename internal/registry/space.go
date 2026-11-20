@@ -151,6 +151,15 @@ func NewSurface(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*reg
 			if v.Spec.Beside != "" && v.Spec.Beside == v.Name {
 				errs = append(errs, field.Invalid(p.Child("beside"), v.Spec.Beside, "a surface cannot be beside itself"))
 			}
+			switch v.Spec.Placement {
+			case denv1.SurfaceTab:
+			case denv1.SurfaceSidebar:
+				if v.Spec.Beside != "" {
+					errs = append(errs, field.Invalid(p.Child("beside"), v.Spec.Beside, "a surface in the sidebar is glued to nothing"))
+				}
+			default:
+				errs = append(errs, field.NotSupported(p.Child("placement"), v.Spec.Placement, []denv1.SurfacePlacement{denv1.SurfaceSidebar}))
+			}
 			switch v.Spec.Kind {
 			case denv1.SurfaceTerminal:
 				if v.Spec.Terminal == nil || v.Spec.Terminal.Den == "" {
@@ -168,8 +177,14 @@ func NewSurface(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*reg
 						errs = append(errs, field.Invalid(p.Child("web", "url"), w.URL, "must be an absolute URL"))
 					}
 				}
+			case denv1.SurfaceUI:
+				if v.Spec.UI == nil || v.Spec.UI.Extension == "" {
+					errs = append(errs, field.Required(p.Child("ui", "extension"), "kind is ui"))
+				} else {
+					errs = append(errs, validRef(p.Child("ui", "extension"), v.Spec.UI.Extension)...)
+				}
 			default:
-				errs = append(errs, field.NotSupported(p.Child("kind"), v.Spec.Kind, []denv1.SurfaceKind{denv1.SurfaceTerminal, denv1.SurfaceWeb}))
+				errs = append(errs, field.NotSupported(p.Child("kind"), v.Spec.Kind, []denv1.SurfaceKind{denv1.SurfaceTerminal, denv1.SurfaceWeb, denv1.SurfaceUI}))
 			}
 			return errs
 		})
