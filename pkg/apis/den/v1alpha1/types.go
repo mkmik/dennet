@@ -192,18 +192,20 @@ type Surface struct {
 type SurfaceSpec struct {
 	// Space is the name of the Space this tab belongs to, in the same namespace.
 	Space string `json:"space"`
-	// Order is the position among the space's tabs, or among its sidebar
-	// sections, lowest first.
+	// Order is the position among the space's tabs, or among its Surfaces
+	// in the same box, lowest first.
 	Order int32  `json:"order,omitempty"`
 	Title string `json:"title,omitempty"`
 	// Beside is the name of another Surface of the same Space that this one is
 	// glued beside, on its right: clients show the two side by side as one tab.
 	// A name that matches no such Surface glues nothing.
 	Beside string `json:"beside,omitempty"`
-	// Placement is where clients show it: a tab when empty, or with sidebar
-	// a section of the Space's part of the sidebar. One in the sidebar is
-	// glued to nothing: it cannot be beside another, and one beside it
-	// glues nothing.
+	// Placement is where clients show it: a tab when empty, or else the
+	// name of a box, a slot in the client's window that shows the selected
+	// Space's Surfaces placed there (dense's are under the Space tree).
+	// Clients decide where a box goes and how big it is, and give a box to
+	// every name a Surface uses, set up or not. One in a box is glued to
+	// nothing: it cannot be beside another, and one beside it glues nothing.
 	Placement SurfacePlacement `json:"placement,omitempty"`
 	// Kind says what the tab shows, and which block below is set.
 	Kind     SurfaceKind      `json:"kind"`
@@ -212,12 +214,11 @@ type SurfaceSpec struct {
 	UI       *UISurface       `json:"ui,omitempty"`
 }
 
+// SurfacePlacement is empty for a tab, or a box's name: a DNS label.
 type SurfacePlacement string
 
-const (
-	SurfaceTab     SurfacePlacement = ""
-	SurfaceSidebar SurfacePlacement = "sidebar"
-)
+// SurfaceTab is a tab; any other placement names a box.
+const SurfaceTab SurfacePlacement = ""
 
 type SurfaceKind string
 

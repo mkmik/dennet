@@ -151,14 +151,13 @@ func NewSurface(typer runtime.ObjectTyper, opts generic.RESTOptionsGetter) (*reg
 			if v.Spec.Beside != "" && v.Spec.Beside == v.Name {
 				errs = append(errs, field.Invalid(p.Child("beside"), v.Spec.Beside, "a surface cannot be beside itself"))
 			}
-			switch v.Spec.Placement {
-			case denv1.SurfaceTab:
-			case denv1.SurfaceSidebar:
-				if v.Spec.Beside != "" {
-					errs = append(errs, field.Invalid(p.Child("beside"), v.Spec.Beside, "a surface in the sidebar is glued to nothing"))
+			if box := string(v.Spec.Placement); box != "" {
+				for _, msg := range validation.NameIsDNSLabel(box, false) {
+					errs = append(errs, field.Invalid(p.Child("placement"), box, msg))
 				}
-			default:
-				errs = append(errs, field.NotSupported(p.Child("placement"), v.Spec.Placement, []denv1.SurfacePlacement{denv1.SurfaceSidebar}))
+				if v.Spec.Beside != "" {
+					errs = append(errs, field.Invalid(p.Child("beside"), v.Spec.Beside, "a surface in a box is glued to nothing"))
+				}
 			}
 			switch v.Spec.Kind {
 			case denv1.SurfaceTerminal:

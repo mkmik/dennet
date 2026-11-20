@@ -1,11 +1,11 @@
-// Command a2ui-demo is a small Extension: it shows a panel in the sidebar of
-// one Space in dense, and a tab in it, and changes them as you click.
+// Command a2ui-demo is a small Extension: it shows a panel in the details box
+// of one Space in dense, and a tab in it, and changes them as you click.
 //
 //	go run ./examples/a2ui-demo --space NAME
 //
 // It creates Extension/a2ui-demo, listens on the socket its spec.endpoint
 // names, and creates two Surfaces of kind ui it owns in the Space: one
-// placed in the sidebar, and a tab. A frontend (dense)
+// placed in the box named details, and a tab. A frontend (dense)
 // that shows them connects, says hello with the surfaces it wants, and gets a
 // full createSurface for each. After that it's plain A2UI 1.0 both ways, one
 // JSON message per line; dense's own messages are under a "dense" key.
@@ -79,12 +79,12 @@ func main() {
 		call(c, "PATCH", api+*ns+"/extensions/a2ui-demo", map[string]any{"spec": ext["spec"]}, &created)
 	}
 	owner := []any{map[string]any{"apiVersion": "den.mkm.pub/v1alpha1", "kind": "Extension", "name": "a2ui-demo", "uid": created.Metadata.UID}}
-	// Two Surfaces of kind ui, a sidebar section and a tab, both owned by the
+	// Two Surfaces of kind ui, a panel in the details box and a tab, both owned by the
 	// Extension, so dennet deletes them some time after it stops for good.
 	// One left by an old run is taken over. Closing the tab in dense deletes
 	// it, and the next run makes it again.
-	for _, placement := range []string{"sidebar", ""} {
-		name, order := d.sidebar(*space), 10
+	for _, placement := range []string{"details", ""} {
+		name, order := d.panel(*space), 10
 		if placement == "" {
 			name, order = d.tab(*space), 1000
 		}
@@ -162,8 +162,8 @@ type demo struct {
 	link   string
 }
 
-func (*demo) sidebar(space string) string { return "a2ui-demo-" + space }
-func (*demo) tab(space string) string     { return "a2ui-demo-" + space + "-tab" }
+func (*demo) panel(space string) string { return "a2ui-demo-" + space }
+func (*demo) tab(space string) string   { return "a2ui-demo-" + space + "-tab" }
 
 type session struct {
 	mu   sync.Mutex
