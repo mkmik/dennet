@@ -274,12 +274,12 @@ func newAPIServer(token, socket, etcdURL string, leases *registry.Leases) (*gene
 
 	denGroup := genericapiserver.NewDefaultAPIGroupInfo(denv1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 	denGroup.VersionedResourcesStorageMap[denv1.SchemeGroupVersion.Version] = map[string]rest.Storage{
-		"dens":              den,
+		"dens":              registry.InAll{Store: den},
 		"dens/status":       denStatus,
 		"dens/log":          registry.NewDenLog(den),
-		"spaces":            space,
+		"spaces":            registry.InAll{Store: space},
 		"spaces/status":     spaceStatus,
-		"surfaces":          surface,
+		"surfaces":          registry.InAll{Store: surface},
 		"hosts":             hosts,
 		"extensions":        extension,
 		"extensions/status": extensionStatus,

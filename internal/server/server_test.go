@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -554,5 +555,35 @@ func TestHostIdle(t *testing.T) {
 	case <-closed:
 	case <-time.After(5 * time.Second):
 		t.Fatal("idle connection to the Host still open")
+	}
+}
+
+// TestAllCategory checks that dens, spaces and surfaces are listed by get all.
+func TestAllCategory(t *testing.T) {
+	c, _ := start(t)
+	resp, err := c.Get("http://dennet/apis/den.mkm.pub/v1alpha1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var list struct {
+		Resources []struct {
+			Name       string
+			Categories []string
+		}
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]bool{}
+	for _, r := range list.Resources {
+		if slices.Contains(r.Categories, "all") {
+			got[r.Name] = true
+		}
+	}
+	for _, name := range []string{"dens", "spaces", "surfaces"} {
+		if !got[name] {
+			t.Errorf("%s should be in category all: %v", name, list.Resources)
+		}
 	}
 }
