@@ -162,6 +162,16 @@ func TestSpacesAndSurfaces(t *testing.T) {
 		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","kind":"web","web":{"url":"https://example.com","html":"<p>"}}}`, 422},
 		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","kind":"web","web":{"url":"example.com"}}}`, 422},
 		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"kind":"terminal","terminal":{"den":"d"}}}`, 422},
+		// placement: empty for a tab, else a box's name, which must be a DNS label;
+		// any kind goes in a box, and a Surface in a box is glued to nothing.
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m-log"},"spec":{"space":"m","placement":"details","kind":"terminal","terminal":{"den":"m-log"}}}`, 201},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m-notes"},"spec":{"space":"m","placement":"notes-2","kind":"web","web":{"html":"<p>"}}}`, 201},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m-old"},"spec":{"space":"m","placement":"sidebar","kind":"web","web":{"html":"<p>"}}}`, 201},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","placement":"Details","kind":"web","web":{"html":"<p>"}}}`, 422},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","placement":"-details","kind":"web","web":{"html":"<p>"}}}`, 422},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","placement":"a.b","kind":"web","web":{"html":"<p>"}}}`, 422},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","placement":"` + strings.Repeat("b", 64) + `","kind":"web","web":{"html":"<p>"}}}`, 422},
+		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","placement":"details","beside":"m-claude","kind":"web","web":{"html":"<p>"}}}`, 422},
 	} {
 		if got := post(tc.res, tc.body); got != tc.want {
 			t.Errorf("POST %s %s: got %d, want %d", tc.res, tc.body, got, tc.want)

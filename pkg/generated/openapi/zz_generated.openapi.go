@@ -18512,7 +18512,7 @@ func schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref common.ReferenceCallback) comm
 					},
 					"order": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Order is the position among the space's tabs, or among its sidebar sections, lowest first.",
+							Description: "Order is the position among the space's tabs, or among its Surfaces in the same box, lowest first.",
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
@@ -18532,7 +18532,7 @@ func schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref common.ReferenceCallback) comm
 					},
 					"placement": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Placement is where clients show it: a tab when empty, or with sidebar a section of the Space's part of the sidebar. One in the sidebar is glued to nothing: it cannot be beside another, and one beside it glues nothing.",
+							Description: "Placement is where clients show it: a tab when empty, or else the name of a box, a slot in the client's window that shows the selected Space's Surfaces placed there (dense's are under the Space tree). Clients decide where a box goes and how big it is, and give a box to every name a Surface uses, set up or not. One in a box is glued to nothing: it cannot be beside another, and one beside it glues nothing.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

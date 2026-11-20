@@ -1,6 +1,6 @@
 +++
 title = "Surface"
-summary = "A tab or sidebar section of a Space: a Den's terminal, a web page, or an Extension's panel"
+summary = "A tab of a Space, or its part of a box: a Den's terminal, a web page, or an Extension's panel"
 aka = ["surfaces"]
 kind = "code"
 intent = "goal"
@@ -31,10 +31,10 @@ status = "done"
 note = "spec.ui.extension names the Extension; its A2UI surfaceId is the Surface's name"
 
 [[feature]]
-id = "sidebar"
-title = "Placement sidebar: a section of the Space's part of the sidebar instead of a tab"
+id = "box"
+title = "Placement names a box: a slot of the client's window that shows the selected Space's Surfaces placed there"
 status = "done"
-note = "Any kind; spec.order orders the sections. dennet refuses one glued beside another"
+note = "Any kind; any DNS label; spec.order orders a Space's Surfaces in a box. dennet refuses one glued beside another"
 
 [[needs]]
 on = "/api/space"
@@ -59,8 +59,15 @@ order and title, so every client and window sees the same combos. A bond
 naming a Surface that has gone counts as none, so deleting a Surface needs
 no cleanup. Not called attach: that is den's attach subresource.
 
-spec.placement says where a Surface goes: a tab when empty, or sidebar,
-a section of the Space's part of the sidebar. It replaces the PRD's
-UISurface resource and its slots: a tab is the PRD's tab slot, a tab glued
-beside an agent's terminal its sidePane, and placement sidebar its sidebar
-slot, for any kind, not just ui.
+spec.placement says where a Surface goes: a tab when empty, or else the
+name of a box. A box is a slot of the client's window with a size the
+client sets, not its content: it shows the selected Space's Surfaces placed
+there, so switching Spaces changes what is in it, never where it is or how
+big. dennet keeps only the name. Each client decides where its boxes go and
+how tall they are, and gives a box to every name a Surface uses, set up or
+not, so a name from an Extension or another machine never hides a Surface.
+It replaces the PRD's UISurface resource and its slots: a tab is the PRD's
+tab slot, a tab glued beside an agent's terminal its sidePane, and a box
+its sidebar slot, for any kind, not just ui. A first try, placement
+sidebar, stacked each Space's Surfaces under the Space tree as tall as they
+drew, and moved the tree on every switch; it is gone.

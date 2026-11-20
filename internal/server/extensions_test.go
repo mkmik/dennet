@@ -14,7 +14,8 @@ import (
 // TestExtensions checks that an Extension is Connected while its endpoint
 // listens, Disconnected once it stops, and deleted after the grace period
 // together with the Surfaces it owns; and that a ui Surface needs an
-// extension, and one in the sidebar can't be glued.
+// extension, and one in a box can't be glued, and needs a name that is a
+// DNS label.
 func TestExtensions(t *testing.T) {
 	old := extensionGrace
 	extensionGrace = time.Second
@@ -76,8 +77,8 @@ func TestExtensions(t *testing.T) {
 	}
 	uid := ext["metadata"].(map[string]any)["uid"].(string)
 	owner := `"ownerReferences":[{"apiVersion":"den.mkm.pub/v1alpha1","kind":"Extension","name":"x","uid":"` + uid + `"}]`
-	if code, m := do("POST", "surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"u",`+owner+`},"spec":{"space":"s","placement":"sidebar","kind":"ui","ui":{"extension":"x"}}}`); code != 201 {
-		t.Fatalf("POST sidebar surface: %d %v", code, m)
+	if code, m := do("POST", "surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"u",`+owner+`},"spec":{"space":"s","placement":"details","kind":"ui","ui":{"extension":"x"}}}`); code != 201 {
+		t.Fatalf("POST surface in a box: %d %v", code, m)
 	}
 	if code, m := do("POST", "surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"tab",`+owner+`},"spec":{"space":"s","kind":"ui","ui":{"extension":"x"}}}`); code != 201 {
 		t.Fatalf("POST ui surface: %d %v", code, m)
@@ -85,11 +86,11 @@ func TestExtensions(t *testing.T) {
 	if code, _ := do("POST", "surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"bad"},"spec":{"space":"s","kind":"ui"}}`); code != 422 {
 		t.Errorf("ui Surface without extension: got %d, want 422", code)
 	}
-	if code, _ := do("POST", "surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"glued"},"spec":{"space":"s","placement":"sidebar","beside":"tab","kind":"ui","ui":{"extension":"x"}}}`); code != 422 {
-		t.Errorf("glued Surface in the sidebar: got %d, want 422", code)
+	if code, _ := do("POST", "surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"glued"},"spec":{"space":"s","placement":"details","beside":"tab","kind":"ui","ui":{"extension":"x"}}}`); code != 422 {
+		t.Errorf("glued Surface in a box: got %d, want 422", code)
 	}
-	if code, _ := do("POST", "surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"where"},"spec":{"space":"s","placement":"dock","kind":"ui","ui":{"extension":"x"}}}`); code != 422 {
-		t.Errorf("Surface placed in no known place: got %d, want 422", code)
+	if code, _ := do("POST", "surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"where"},"spec":{"space":"s","placement":"Not a box","kind":"ui","ui":{"extension":"x"}}}`); code != 422 {
+		t.Errorf("Surface in a box with a bad name: got %d, want 422", code)
 	}
 	eventually("not Connected", func() bool { return phase() == "Connected" })
 
@@ -101,6 +102,6 @@ func TestExtensions(t *testing.T) {
 	mu.Unlock()
 	eventually("not Disconnected", func() bool { return phase() == "Disconnected" })
 	eventually("Extension not deleted", func() bool { code, _ := do("GET", "extensions/x", ""); return code == 404 })
-	eventually("sidebar Surface not deleted", func() bool { code, _ := do("GET", "surfaces/u", ""); return code == 404 })
+	eventually("Surface in a box not deleted", func() bool { code, _ := do("GET", "surfaces/u", ""); return code == 404 })
 	eventually("ui Surface not deleted", func() bool { code, _ := do("GET", "surfaces/tab", ""); return code == 404 })
 }

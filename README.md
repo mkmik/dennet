@@ -110,9 +110,13 @@ What is in them never goes through dennet: dense connects to the endpoint
 and speaks A2UI 1.0 there, one JSON message per line. The A2UI `surfaceId`
 is the Surface's name.
 
-Any Surface, of any kind, can go in its Space's part of the sidebar
-instead of the tabs, with `spec.placement: sidebar`. `spec.order` orders
-the sections there. One in the sidebar can't be glued beside another.
+Any Surface, of any kind, can go in a box instead of the tabs, with
+`spec.placement` set to the box's name, a DNS label such as `details`. A
+box is a slot in the client's window that shows the selected Space's
+Surfaces placed there; dense's are under the Space tree. Where a box goes
+and how big it is is up to each client, which gives a box to every name a
+Surface uses, set up or not. `spec.order` orders a Space's Surfaces in a
+box. One in a box can't be glued beside another.
 
 dennet keeps a connection open to each Extension's endpoint and sends
 nothing on it. `status.phase` is `Connected` while it is open and
