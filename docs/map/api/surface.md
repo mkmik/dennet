@@ -1,6 +1,6 @@
 +++
 title = "Surface"
-summary = "One tab inside a Space; kind terminal points at a Den, kind web shows a page"
+summary = "A tab or sidebar section of a Space: a Den's terminal, a web page, or an Extension's panel"
 aka = ["surfaces"]
 kind = "code"
 intent = "goal"
@@ -24,6 +24,18 @@ title = "Glue a Surface beside another of its Space, for dense's combo tabs"
 status = "done"
 note = "spec.beside names the Surface it sits right of; dennet checks only that it isn't itself"
 
+[[feature]]
+id = "ui"
+title = "Kind ui: a tab an Extension draws with A2UI"
+status = "done"
+note = "spec.ui.extension names the Extension; its A2UI surfaceId is the Surface's name"
+
+[[feature]]
+id = "sidebar"
+title = "Placement sidebar: a section of the Space's part of the sidebar instead of a tab"
+status = "done"
+note = "Any kind; spec.order orders the sections. dennet refuses one glued beside another"
+
 [[needs]]
 on = "/api/space"
 why = "Every Surface belongs to a Space"
@@ -46,3 +58,9 @@ t8y:/tabs/combo). The bond is spec.beside on the glued Surface, kept here like
 order and title, so every client and window sees the same combos. A bond
 naming a Surface that has gone counts as none, so deleting a Surface needs
 no cleanup. Not called attach: that is den's attach subresource.
+
+spec.placement says where a Surface goes: a tab when empty, or sidebar,
+a section of the Space's part of the sidebar. It replaces the PRD's
+UISurface resource and its slots: a tab is the PRD's tab slot, a tab glued
+beside an agent's terminal its sidePane, and placement sidebar its sidebar
+slot, for any kind, not just ui.

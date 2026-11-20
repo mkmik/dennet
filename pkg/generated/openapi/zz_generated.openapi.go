@@ -331,6 +331,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		v1alpha1.DenSpec{}.OpenAPIModelName():                          schema_pkg_apis_den_v1alpha1_DenSpec(ref),
 		v1alpha1.DenStatus{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_DenStatus(ref),
 		v1alpha1.EnvVar{}.OpenAPIModelName():                           schema_pkg_apis_den_v1alpha1_EnvVar(ref),
+		v1alpha1.Extension{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_Extension(ref),
+		v1alpha1.ExtensionList{}.OpenAPIModelName():                    schema_pkg_apis_den_v1alpha1_ExtensionList(ref),
+		v1alpha1.ExtensionSpec{}.OpenAPIModelName():                    schema_pkg_apis_den_v1alpha1_ExtensionSpec(ref),
+		v1alpha1.ExtensionStatus{}.OpenAPIModelName():                  schema_pkg_apis_den_v1alpha1_ExtensionStatus(ref),
 		v1alpha1.HistorySpec{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_HistorySpec(ref),
 		v1alpha1.Host{}.OpenAPIModelName():                             schema_pkg_apis_den_v1alpha1_Host(ref),
 		v1alpha1.HostList{}.OpenAPIModelName():                         schema_pkg_apis_den_v1alpha1_HostList(ref),
@@ -345,6 +349,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		v1alpha1.SurfaceList{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_SurfaceList(ref),
 		v1alpha1.SurfaceSpec{}.OpenAPIModelName():                      schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref),
 		v1alpha1.TerminalSurface{}.OpenAPIModelName():                  schema_pkg_apis_den_v1alpha1_TerminalSurface(ref),
+		v1alpha1.UISurface{}.OpenAPIModelName():                        schema_pkg_apis_den_v1alpha1_UISurface(ref),
 		v1alpha1.WebSurface{}.OpenAPIModelName():                       schema_pkg_apis_den_v1alpha1_WebSurface(ref),
 	}
 }
@@ -17836,6 +17841,148 @@ func schema_pkg_apis_den_v1alpha1_EnvVar(ref common.ReferenceCallback) common.Op
 	}
 }
 
+func schema_pkg_apis_den_v1alpha1_Extension(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Extension is a long-running program that shows its own UI in clients such as dense, in Surfaces of kind ui: for example ccwt. The program creates its Extension and listens on spec.endpoint; clients connect there and speak A2UI 1.0 for every Surface of kind ui that names it.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(metav1.ObjectMeta{}.OpenAPIModelName()),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(v1alpha1.ExtensionSpec{}.OpenAPIModelName()),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(v1alpha1.ExtensionStatus{}.OpenAPIModelName()),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			metav1.ObjectMeta{}.OpenAPIModelName(), v1alpha1.ExtensionSpec{}.OpenAPIModelName(), v1alpha1.ExtensionStatus{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_ExtensionList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref(metav1.ListMeta{}.OpenAPIModelName()),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref(v1alpha1.Extension{}.OpenAPIModelName()),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			metav1.ListMeta{}.OpenAPIModelName(), v1alpha1.Extension{}.OpenAPIModelName()},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_ExtensionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"endpoint": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Endpoint is the absolute path of the Unix socket the program listens on, on the machine dennet runs on.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"endpoint"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_ExtensionStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ExtensionStatus is written only by dennet, on extensions/status. dennet keeps a connection open to the endpoint: while it is open the Extension is Connected. One Disconnected for 10 minutes is deleted, and with it the Surfaces it owns.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"phase": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"since": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Since is when the phase last changed.",
+							Ref:         ref(metav1.Time{}.OpenAPIModelName()),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			metav1.Time{}.OpenAPIModelName()},
+	}
+}
+
 func schema_pkg_apis_den_v1alpha1_HistorySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -18365,7 +18512,7 @@ func schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref common.ReferenceCallback) comm
 					},
 					"order": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Order is the position among the space's tabs, lowest first.",
+							Description: "Order is the position among the space's tabs, or among its sidebar sections, lowest first.",
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
@@ -18379,6 +18526,13 @@ func schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref common.ReferenceCallback) comm
 					"beside": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Beside is the name of another Surface of the same Space that this one is glued beside, on its right: clients show the two side by side as one tab. A name that matches no such Surface glues nothing.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"placement": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Placement is where clients show it: a tab when empty, or with sidebar a section of the Space's part of the sidebar. One in the sidebar is glued to nothing: it cannot be beside another, and one beside it glues nothing.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -18401,12 +18555,17 @@ func schema_pkg_apis_den_v1alpha1_SurfaceSpec(ref common.ReferenceCallback) comm
 							Ref: ref(v1alpha1.WebSurface{}.OpenAPIModelName()),
 						},
 					},
+					"ui": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref(v1alpha1.UISurface{}.OpenAPIModelName()),
+						},
+					},
 				},
 				Required: []string{"space", "kind"},
 			},
 		},
 		Dependencies: []string{
-			v1alpha1.TerminalSurface{}.OpenAPIModelName(), v1alpha1.WebSurface{}.OpenAPIModelName()},
+			v1alpha1.TerminalSurface{}.OpenAPIModelName(), v1alpha1.UISurface{}.OpenAPIModelName(), v1alpha1.WebSurface{}.OpenAPIModelName()},
 	}
 }
 
@@ -18426,6 +18585,28 @@ func schema_pkg_apis_den_v1alpha1_TerminalSurface(ref common.ReferenceCallback) 
 					},
 				},
 				Required: []string{"den"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_den_v1alpha1_UISurface(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "UISurface is a Surface whose content an Extension draws: a client connects to the Extension's endpoint and asks for the A2UI surface whose surfaceId is the Surface's name.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"extension": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Extension is the name of the Extension, in the same namespace.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"extension"},
 			},
 		},
 	}

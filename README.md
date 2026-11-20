@@ -98,6 +98,37 @@ Surface is left it sets `status.archivedAt`. Only dennet writes status, on
 `spaces/status`. Setting `spec.archived` back to `false` reopens the Space
 and clears `status.archivedAt`; the Spaces under it stay archived.
 
+## Extensions and UI surfaces
+
+An `Extension` is a long-running program, such as ccwt, that shows its own
+UI in dense. It listens on a Unix socket and names it in `spec.endpoint`.
+Its UI goes in `Surface`s of kind `ui`, with `spec.ui.extension` naming
+the Extension. Each is a tab like any other: ordered, glued beside a
+terminal, closed (deleted).
+
+What is in them never goes through dennet: dense connects to the endpoint
+and speaks A2UI 1.0 there, one JSON message per line. The A2UI `surfaceId`
+is the Surface's name.
+
+Any Surface, of any kind, can go in its Space's part of the sidebar
+instead of the tabs, with `spec.placement: sidebar`. `spec.order` orders
+the sections there. One in the sidebar can't be glued beside another.
+
+dennet keeps a connection open to each Extension's endpoint and sends
+nothing on it. `status.phase` is `Connected` while it is open and
+`Disconnected` once it closes; `status.since` says since when. An Extension
+`Disconnected` for 10 minutes is deleted, and so are the Surfaces whose
+ownerReference names an Extension that is gone. Only dennet writes status, on `extensions/status`.
+
+`examples/a2ui-demo` is a small Extension to start from:
+
+```sh
+go run ./examples/a2ui-demo --space NAME
+```
+
+Ctrl-C deletes its Extension, and with it its Surfaces; with `--keep` they
+stay, greyed in dense, for the next run to take over.
+
 ## Remote hosts
 
 A `Host` is another machine running dennet. Its objects show up here in the
