@@ -21,6 +21,8 @@ From the dense PRD. Outside tools (ccwt) create Spaces and keep title,
 badges and state current; dense writes order, collapsed and renames.
 spec.tags is a free-form list of strings, non-empty and unique.
 spec.workingDir, an absolute path, is where dens for the space's surfaces start.
+While the space has one terminal, dennet keeps it at that terminal's directory
+(see /controllers/follow-cwd).
 spec.archived and status.archivedAt are for archiving (see
 /controllers/archive); status is only written on spaces/status.
 Nothing in it is tied to git. Validation only checks state and that a
