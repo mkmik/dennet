@@ -18300,6 +18300,20 @@ func schema_pkg_apis_den_v1alpha1_SpaceSpec(ref common.ReferenceCallback) common
 							Format:      "",
 						},
 					},
+					"gather": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Gather names other Spaces in the same namespace that clients also show under this one, in this order, after its own children: for example the worktrees of one piece of work, each from another repo. A gathered Space keeps its home under its Parent, and archiving does not follow Gather. A name that matches no Space shows nothing.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
 					"order": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Order is the position among siblings, lowest first.",

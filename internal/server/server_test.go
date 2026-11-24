@@ -151,6 +151,12 @@ func TestSpacesAndSurfaces(t *testing.T) {
 		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m"},"spec":{"parent":"kubecfg","order":20,"state":"waiting","badges":[{"text":"MR !412","tone":"info"}]}}`, 201},
 		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"state":"sleepy"}}`, 422},
 		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"parent":"x"}}`, 422},
+		// gather: other Spaces shown under this one; not itself, no repeats, valid names.
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"auth"},"spec":{"title":"auth refactor","gather":["m","not-yet"]}}`, 201},
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"gather":["x"]}}`, 422},
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"gather":["m","m"]}}`, 422},
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"gather":[""]}}`, 422},
+		{"spaces", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"gather":["Bad_Name"]}}`, 422},
 		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m-claude"},"spec":{"space":"m","kind":"terminal","terminal":{"den":"m-claude"}}}`, 201},
 		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"m-side"},"spec":{"space":"m","beside":"m-claude","kind":"terminal","terminal":{"den":"m-side"}}}`, 201},
 		{"surfaces", `{"kind":"Surface","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"x"},"spec":{"space":"m","beside":"x","kind":"terminal","terminal":{"den":"x"}}}`, 422},
