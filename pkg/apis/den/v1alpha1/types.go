@@ -128,6 +128,12 @@ type SpaceSpec struct {
 	// Parent is the name of the parent Space in the same namespace.
 	// Empty means top level.
 	Parent string `json:"parent,omitempty"`
+	// Gather names other Spaces in the same namespace that clients also
+	// show under this one, in this order, after its own children: for
+	// example the worktrees of one piece of work, each from another repo.
+	// A gathered Space keeps its home under its Parent, and archiving does
+	// not follow Gather. A name that matches no Space shows nothing.
+	Gather []string `json:"gather,omitempty"`
 	// Order is the position among siblings, lowest first.
 	Order int32  `json:"order,omitempty"`
 	Title string `json:"title,omitempty"`

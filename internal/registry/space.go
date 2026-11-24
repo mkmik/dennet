@@ -73,6 +73,22 @@ func validateSpace(obj runtime.Object) field.ErrorList {
 		errs = append(errs, field.Invalid(p.Child("parent"), s.Spec.Parent, "a space cannot be its own parent"))
 	}
 	errs = append(errs, validRef(p.Child("parent"), s.Spec.Parent)...)
+	// Clients show gathered Spaces one level deep, so gather loops are harmless.
+	gathered := map[string]bool{}
+	for i, g := range s.Spec.Gather {
+		gp := p.Child("gather").Index(i)
+		switch {
+		case g == "":
+			errs = append(errs, field.Required(gp, ""))
+		case g == s.Name:
+			errs = append(errs, field.Invalid(gp, g, "a space cannot gather itself"))
+		case gathered[g]:
+			errs = append(errs, field.Duplicate(gp, g))
+		default:
+			errs = append(errs, validRef(gp, g)...)
+		}
+		gathered[g] = true
+	}
 	if d := s.Spec.WorkingDir; d != "" && !strings.HasPrefix(d, "/") {
 		errs = append(errs, field.Invalid(p.Child("workingDir"), d, "must be an absolute path"))
 	}
