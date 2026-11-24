@@ -155,6 +155,7 @@ func Run(ctx context.Context, o Options) error {
 	go func() { errc <- prepared.RunWithContext(ctx) }()
 	go runDens(ctx, o.Den, o.Socket, leases)
 	go runArchive(ctx, o.Socket)
+	go runFollowCWD(ctx, o.Socket)
 	go runExtensions(ctx, o.Socket)
 
 	select {
