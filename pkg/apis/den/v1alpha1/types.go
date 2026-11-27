@@ -73,8 +73,15 @@ const DenFinalizer = "den.mkm.pub/den"
 // while later (--undo-grace, 1 minute by default). Until then, creating an
 // object with the same name brings it back as it was: same uid, status kept,
 // and for a Den the same den, which was never stopped. Deleting with
-// gracePeriodSeconds=0 skips the wait.
+// gracePeriodSeconds=0 skips the wait; UndoGraceAnnotation changes it.
 const UndoFinalizer = "den.mkm.pub/undo"
+
+// UndoGraceAnnotation on a Space, Surface or Den sets how long it can be
+// brought back once deleted, as a Go duration ("0s", "10m"), in place of
+// --undo-grace. "0s" (or "0") means it goes as soon as it is deleted. It can be set
+// before the delete or while the object waits. Values that don't parse are
+// ignored.
+const UndoGraceAnnotation = "den.mkm.pub/undo-grace"
 
 type RestartPolicy string
 

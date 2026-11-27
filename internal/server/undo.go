@@ -13,7 +13,8 @@ import (
 
 // runUndo runs dennet's undo controller until ctx is cancelled: it removes
 // denv1.UndoFinalizer from Spaces, Surfaces and Dens deleted grace ago, so
-// they go for good (a Den once its den has stopped, see runDens).
+// they go for good (a Den once its den has stopped, see runDens). An object's
+// denv1.UndoGraceAnnotation, if set, takes the place of grace.
 func runUndo(ctx context.Context, socket string, grace time.Duration) {
 	c := localClient(socket, denv1.SchemeGroupVersion)
 	informers := map[string]cache.SharedIndexInformer{
@@ -44,7 +45,11 @@ func runUndo(ctx context.Context, socket string, grace time.Duration) {
 				if del == nil || !slices.Contains(m.GetFinalizers(), denv1.UndoFinalizer) {
 					continue
 				}
-				if left := del.Add(grace).Sub(now); left > 0 {
+				g := grace
+				if d, err := time.ParseDuration(m.GetAnnotations()[denv1.UndoGraceAnnotation]); err == nil {
+					g = d
+				}
+				if left := del.Add(g).Sub(now); left > 0 {
 					wait = min(wait, left)
 					continue
 				}

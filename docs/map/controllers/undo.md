@@ -47,4 +47,9 @@ Deleting with `gracePeriodSeconds=0` skips the wait: dennet removes the
 finalizer first. A client that restarts a Den (delete, then create) uses
 that.
 
+The annotation `den.mkm.pub/undo-grace` (a duration, like `0s` or `10m`)
+sets the wait for one object in place of `--undo-grace`. `0s` (or just `0`) means it goes
+as soon as it is deleted. Setting it on an object already waiting counts
+from when that object was deleted. Values that don't parse are ignored.
+
 Objects made before this existed have no finalizer and go at once.
