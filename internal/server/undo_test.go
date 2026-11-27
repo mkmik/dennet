@@ -110,3 +110,23 @@ func TestUndoGrace(t *testing.T) {
 		t.Fatal("made again after the grace, but with the old uid")
 	}
 }
+
+// TestUndoGraceAnnotation checks that denv1.UndoGraceAnnotation=0s (or a
+// bare 0) skips the undo wait, whether set before the delete or while the
+// object waits.
+func TestUndoGraceAnnotation(t *testing.T) {
+	c, _ := run(t, Options{StateDir: tempDir(t), UndoGrace: time.Hour})
+	const url = "http://dennet/apis/den.mkm.pub/v1alpha1/namespaces/p/spaces"
+	do(t, c, "POST", url, "application/json", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"a","annotations":{"`+denv1.UndoGraceAnnotation+`":"0"}}}`)
+	do(t, c, "POST", url, "application/json", `{"kind":"Space","apiVersion":"den.mkm.pub/v1alpha1","metadata":{"name":"b"}}`)
+	do(t, c, "DELETE", url+"/a", "", "")
+	do(t, c, "DELETE", url+"/b", "", "")
+	eventually(t, "annotated Space still there", func() bool { code, _ := do(t, c, "GET", url+"/a", "", ""); return code == 404 })
+	if code, _ := do(t, c, "GET", url+"/b", "", ""); code != 200 {
+		t.Fatalf("Space without the annotation should wait: %d", code)
+	}
+	if code, m := do(t, c, "PATCH", url+"/b", "application/merge-patch+json", `{"metadata":{"annotations":{"`+denv1.UndoGraceAnnotation+`":"0s"}}}`); code != 200 {
+		t.Fatalf("annotate waiting Space: %d %v", code, m)
+	}
+	eventually(t, "Space annotated while waiting still there", func() bool { code, _ := do(t, c, "GET", url+"/b", "", ""); return code == 404 })
+}

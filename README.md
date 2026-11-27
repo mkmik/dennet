@@ -97,6 +97,14 @@ time is up. Delete with `gracePeriodSeconds=0` to skip the wait:
 dennet delete den NAME --grace-period=0 --force
 ```
 
+The annotation `den.mkm.pub/undo-grace` sets the wait for one object, as a
+duration that replaces `--undo-grace`. `0s` (or just `0`) means no wait. It works when set
+before deleting or while the object waits:
+
+```sh
+dennet annotate den NAME den.mkm.pub/undo-grace=0s
+```
+
 ## Archiving Spaces
 
 Setting `spec.archived: true` on a Space stops everything in it, while the
