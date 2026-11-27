@@ -55,7 +55,7 @@ func archive(ctx context.Context, c *restclient.RESTClient, spaces, surfaces []a
 	for _, o := range surfaces {
 		v := o.(*denv1.Surface)
 		key := v.Namespace + "/" + v.Spec.Space
-		if !archived[key] {
+		if !archived[key] || v.DeletionTimestamp != nil { // deleted already: gone, as far as archiving goes
 			continue
 		}
 		left[key] = true

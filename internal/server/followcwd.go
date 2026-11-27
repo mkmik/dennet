@@ -52,7 +52,7 @@ func runFollowCWD(ctx context.Context, socket string) {
 func followCWD(spaces, surfaces, dens []any) map[*denv1.Space]string {
 	terminals := map[string][]string{} // Space -> Dens of its terminal Surfaces
 	for _, o := range surfaces {
-		if v := o.(*denv1.Surface); v.Spec.Terminal != nil {
+		if v := o.(*denv1.Surface); v.Spec.Terminal != nil && v.DeletionTimestamp == nil {
 			key := v.Namespace + "/" + v.Spec.Space
 			terminals[key] = append(terminals[key], v.Spec.Terminal.Den)
 		}
