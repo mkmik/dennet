@@ -78,6 +78,9 @@ type Options struct {
 	// Den is the den binary started for each Den that has no den running.
 	// Empty starts none; deleting a Den still stops its den.
 	Den string
+	// UndoGrace is how long a deleted Space, Surface or Den can be brought
+	// back (see denv1.UndoFinalizer).
+	UndoGrace time.Duration
 }
 
 type localConnKey struct{}
@@ -157,6 +160,7 @@ func Run(ctx context.Context, o Options) error {
 	go runArchive(ctx, o.Socket)
 	go runFollowCWD(ctx, o.Socket)
 	go runExtensions(ctx, o.Socket)
+	go runUndo(ctx, o.Socket, o.UndoGrace)
 
 	select {
 	case err = <-errc:
@@ -275,12 +279,12 @@ func newAPIServer(token, socket, etcdURL string, leases *registry.Leases) (*gene
 
 	denGroup := genericapiserver.NewDefaultAPIGroupInfo(denv1.GroupName, Scheme, metav1.ParameterCodec, Codecs)
 	denGroup.VersionedResourcesStorageMap[denv1.SchemeGroupVersion.Version] = map[string]rest.Storage{
-		"dens":              registry.InAll{Store: den},
+		"dens":              registry.Undoable{InAll: registry.InAll{Store: den}},
 		"dens/status":       denStatus,
 		"dens/log":          registry.NewDenLog(den),
-		"spaces":            registry.InAll{Store: space},
+		"spaces":            registry.Undoable{InAll: registry.InAll{Store: space}},
 		"spaces/status":     spaceStatus,
-		"surfaces":          registry.InAll{Store: surface},
+		"surfaces":          registry.Undoable{InAll: registry.InAll{Store: surface}},
 		"hosts":             hosts,
 		"extensions":        extension,
 		"extensions/status": extensionStatus,

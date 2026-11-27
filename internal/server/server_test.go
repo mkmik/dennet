@@ -56,8 +56,8 @@ func TestDenProtocol(t *testing.T) {
 	md, spec := den["metadata"].(map[string]any), den["spec"].(map[string]any)
 	uid, rv := md["uid"].(string), md["resourceVersion"].(string)
 	if spec["restartPolicy"] != "Never" || md["generation"] != 1.0 || den["status"] != nil && len(den["status"].(map[string]any)) != 0 ||
-		len(md["finalizers"].([]any)) != 1 || md["finalizers"].([]any)[0] != denv1.DenFinalizer {
-		t.Fatalf("create should default spec, set generation 1, add the finalizer and drop status: %v", den)
+		!slices.Equal(md["finalizers"].([]any), []any{denv1.UndoFinalizer, denv1.DenFinalizer}) {
+		t.Fatalf("create should default spec, set generation 1, add the finalizers and drop status: %v", den)
 	}
 
 	events := watch(t, c, base+"?watch=true&fieldSelector=metadata.name%3Dbuild&resourceVersion="+rv)

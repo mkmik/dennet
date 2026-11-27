@@ -68,6 +68,14 @@ type ReportSpec struct {
 // so deleting a Den is how to stop its den.
 const DenFinalizer = "den.mkm.pub/den"
 
+// UndoFinalizer is on every Space, Surface and Den. A deleted one stays,
+// marked by its deletionTimestamp, until dennet removes this finalizer a
+// while later (--undo-grace, 1 minute by default). Until then, creating an
+// object with the same name brings it back as it was: same uid, status kept,
+// and for a Den the same den, which was never stopped. Deleting with
+// gracePeriodSeconds=0 skips the wait.
+const UndoFinalizer = "den.mkm.pub/undo"
+
 type RestartPolicy string
 
 const (

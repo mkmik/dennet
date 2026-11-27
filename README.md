@@ -75,13 +75,27 @@ Two things this doesn't catch: a hung den whose socket is still open counts
 as alive, and dens on other machines are their own dennet's (dennet only
 connects to dens on this host).
 
-Deleting a Den stops its den. Every Den gets the finalizer `den.mkm.pub/den`,
+Deleting a Den stops its den, once it can no longer be brought back (see
+Undoing deletes). Every Den gets the finalizer `den.mkm.pub/den`,
 so it stays while dennet asks the den to shut down over the den's socket,
 as `den delete` does: den stops the program (SIGHUP, then SIGKILL after
 5 s), writes a final status and exits. Then dennet removes the finalizer. A Den
 whose den isn't running goes right away; one whose den doesn't stop goes
 once its socket closes. This works with
 `--den=` too.
+
+## Undoing deletes
+
+Deleting a Space, Surface or Den doesn't remove it at once: it stays, with
+a `deletionTimestamp`, for `--undo-grace` (1 minute by default), held by
+the finalizer `den.mkm.pub/undo`. Clients hide such objects. Creating one
+again with the same name in that time brings it back in place: same uid,
+same status, and for a Den the same den, which is not stopped until the
+time is up. Delete with `gracePeriodSeconds=0` to skip the wait:
+
+```sh
+dennet delete den NAME --grace-period=0 --force
+```
 
 ## Archiving Spaces
 

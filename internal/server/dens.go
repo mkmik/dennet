@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -64,11 +66,13 @@ func runDens(ctx context.Context, den, socket string, leases *registry.Leases) {
 		for _, d := range all {
 			switch {
 			case d.DeletionTimestamp != nil:
-				if _, ok := stopping[d.UID]; !ok && slices.Contains(d.Finalizers, denv1.DenFinalizer) {
+				// A Den that can still be brought back keeps its den.
+				if _, ok := stopping[d.UID]; !ok && slices.Contains(d.Finalizers, denv1.DenFinalizer) &&
+					!slices.Contains(d.Finalizers, denv1.UndoFinalizer) {
 					stopping[d.UID] = now
 					go func() {
 						if stopDen(d) || !leases.Held(d) {
-							release(ctx, denClient, d)
+							release(ctx, denClient, "dens", d, denv1.DenFinalizer)
 						}
 					}()
 				}
@@ -180,14 +184,19 @@ func stopDen(d *denv1.Den) bool {
 	return true
 }
 
-// release removes the finalizer from d, so the Den goes away. The patch
-// tests that the finalizer is still where d had it, so other changes (den's
-// final status) don't get in the way.
-func release(ctx context.Context, dens *restclient.RESTClient, d *denv1.Den) {
-	at := fmt.Sprintf("/metadata/finalizers/%d", slices.Index(d.Finalizers, denv1.DenFinalizer))
-	patch, _ := json.Marshal([]map[string]string{{"op": "test", "path": at, "value": denv1.DenFinalizer}, {"op": "remove", "path": at}})
-	err := dens.Patch(types.JSONPatchType).Namespace(d.Namespace).Resource("dens").Name(d.Name).Body(patch).Do(ctx).Error()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "dennet: releasing Den %s/%s: %v\n", d.Namespace, d.Name, err)
+// release removes finalizer from obj, a resource being deleted. The patch
+// tests that the finalizer is still where obj had it and that obj is still
+// being deleted (not brought back since), so other changes (den's final
+// status) don't get in the way.
+func release(ctx context.Context, c *restclient.RESTClient, resource string, obj metav1.Object, finalizer string) {
+	at := fmt.Sprintf("/metadata/finalizers/%d", slices.Index(obj.GetFinalizers(), finalizer))
+	patch, _ := json.Marshal([]map[string]string{
+		{"op": "test", "path": "/metadata/deletionTimestamp", "value": obj.GetDeletionTimestamp().UTC().Format(time.RFC3339)},
+		{"op": "test", "path": at, "value": finalizer},
+		{"op": "remove", "path": at},
+	})
+	err := c.Patch(types.JSONPatchType).Namespace(obj.GetNamespace()).Resource(resource).Name(obj.GetName()).Body(patch).Do(ctx).Error()
+	if err != nil && !apierrors.IsNotFound(err) {
+		fmt.Fprintf(os.Stderr, "dennet: releasing %s %s/%s: %v\n", resource, obj.GetNamespace(), obj.GetName(), err)
 	}
 }

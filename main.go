@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -195,6 +196,7 @@ func main() {
 		},
 	}
 	run.Flags().StringVar(&o.Den, "den", "den", "den binary to start for each Den without a live Lease (empty: start none)")
+	run.Flags().DurationVar(&o.UndoGrace, "undo-grace", time.Minute, "how long a deleted Space, Surface or Den can be brought back by creating it again")
 	run.Flags().StringVar(&o.TCPAddr, "tcp", "", "also serve TLS on this address (e.g. 127.0.0.1:0), for stock kubectl and remote clients")
 	srv := &cobra.Command{Use: "server", Short: "Manage the dennet API server"}
 	srv.AddCommand(run)
